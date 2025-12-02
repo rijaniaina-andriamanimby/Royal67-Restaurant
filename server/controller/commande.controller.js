@@ -1,5 +1,6 @@
 const Commande = require('../model/commande.model')
 const CommandeDetail = require('../model/commandeDetail.model')
+const Paiement = require('../model/paiement.model')
 
 exports.getAll = async (req, res) => {
     try {
@@ -7,18 +8,18 @@ exports.getAll = async (req, res) => {
         // const response = result.map()
         return res.status(200).json(result)
     } catch (error) {
-        console.log(error)
         return res.status(500).json({message: "Une erreur est survenue lors de la récupération des données !", error})
     }
 }
 
 exports.insert = async (req, res) => {
     try {
-        const {nomTable, commandeDetail} = req.body
+        const {nomTable, commandeDetail, payer, rendu, typePaiement} = req.body
         const commande = await Commande.insert(nomTable)
         commandeDetail.map(async (value)=>{
             await CommandeDetail.insert(commande.id, value.idMenu, value.quantite)
         })
+        await Paiement.insert(payer, rendu, typePaiement, commande.id)
         return res.status(201).json({idCommande: commande.id})
     } catch (error) {
         return res.status(500).json({message: 'Une erreur est survenue lors de l\' insertion des données !', error})
