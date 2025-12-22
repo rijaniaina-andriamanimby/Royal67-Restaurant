@@ -1,3 +1,5 @@
 const app = require('./app')
 
-app.listen(8000)
+app.listen(process.env.PORT, ()=>{
+    console.log(`Démarrage sur le port ${process.env.PORT}`)
+})
