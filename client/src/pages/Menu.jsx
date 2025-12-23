@@ -1,62 +1,100 @@
 import React, { useEffect, useState } from 'react'
 import api from '../service/api'
 import FeedBackService from '../service/FeedBackService'
-import MenuForm from '../components/MenuForm'
-import TableMenu from '../components/TableMenu'
-import { BiPlusCircle } from 'react-icons/bi'
+import TableMenu from '../components/Menu/TableMenu'
+import MenuCards from '../components/Menu/MenuCards'
+import MenuToolbar from '../components/Menu/MenuToolbar'
+import Pagination from '../components/Pagination'
+import MenuModal from '../components/Menu/MenuModal'
+import { BiPlus, BiPlusCircle } from 'react-icons/bi'
+
+const ITEMS_PER_PAGE = 9
 
 const Menu = () => {
   const [menuList, setMenuList] = useState([])
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedMenu, setSelectedMenu] = useState(null)
   const [openModal, setOpenModal] = useState(false)
 
-  const getMenu = async () => {
-    const response = await api.get('/menu')
-    setMenuList(response.data)
-  }
+  useEffect(() => {
+    api.get('/menu').then(res => setMenuList(res.data))
+  }, [])
+
+  /* 🔍 Recherche */
+  let filtered = menuList.filter(item =>
+    item.nom.toLowerCase().includes(search.toLowerCase())
+  )
+
+  /* 🔃 Tri */
+  if (sort === 'nom') filtered.sort((a, b) => a.nom.localeCompare(b.nom))
+  if (sort === 'categorie') filtered.sort((a, b) => a.categorie.localeCompare(b.categorie))
+  if (sort === 'prix_asc') filtered.sort((a, b) => a.prix - b.prix)
+  if (sort === 'prix_desc') filtered.sort((a, b) => b.prix - a.prix)
+
+  /* 📄 Pagination */
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const start = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
 
   const handleDelete = async (id) => {
-    const result = await FeedBackService.confirm();
-    if (result) {
-      try {
-        await api.delete('/menu/' + id)
-        setMenuList(menuList.filter((value) => {
-          if (value.id != id) return true
-        }))
-      } catch (error) {
-        console.log(error)
-      }
+    const confirm = await FeedBackService.confirm()
+    if (confirm) {
+      await api.delete(`/menu/${id}`)
+      setMenuList(prev => prev.filter(i => i.id !== id))
     }
   }
 
-  useEffect(() => {
-    getMenu()
-  }, [])
-
   return (
-    <div>
-      <div>
-        <button onClick={() => setOpenModal(true)}
-          className='bg-emerald-500 p-3 cursor-pointer flex items-center justify-center gap-2 text-white inset-4 border-2 rounded-full hover:bg-emerald-700'>
-          <BiPlusCircle size={18}/> 
-          <span>Ajouter</span>
+    <div className="p-6">
+      
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold">Menus</h1>
+        <button
+          onClick={() => { setSelectedMenu(null); setOpenModal(true) }}
+          className="bg-emerald-600 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center"
+        >
+          <BiPlusCircle /> Ajouter
         </button>
       </div>
-      <div>
-        <div>
-          Trier par : categorie / prix
-        </div>
-      </div>
-      <TableMenu
-        handleDelete={handleDelete}
-        menuList={menuList}
-        setSelectedMenu={setSelectedMenu}
+
+      <MenuToolbar
+        search={search}
+        setSearch={setSearch}
+        sort={sort}
+        setSort={setSort}
       />
-      {
-        openModal || selectedMenu && (
-          <MenuForm setMenuList={setMenuList} list={menuList} menu={selectedMenu} />
-        )
-      }
+
+      {/* Desktop */}
+      <div className="hidden md:block">
+        <TableMenu
+          menuList={paginated}
+          setSelectedMenu={(m) => { setSelectedMenu(m); setOpenModal(true) }}
+          handleDelete={handleDelete}
+        />
+      </div>
+
+      {/* Mobile */}
+      <MenuCards
+        menuList={paginated}
+        setSelectedMenu={(m) => { setSelectedMenu(m); setOpenModal(true) }}
+        handleDelete={handleDelete}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+      />
+
+      {openModal && (
+        <MenuModal
+          menu={selectedMenu}
+          setMenuList={setMenuList}
+          onClose={() => setOpenModal(false)}
+        />
+      )}
     </div>
   )
 }
