@@ -1,17 +1,22 @@
 import React from 'react'
-
+import {MdSearch} from 'react-icons/md'
 const MenuToolbar = ({ search, setSearch, sort, setSort }) => {
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-4">
       
       {/* Recherche */}
-      <input
+      <div className='relative border rounded-lg px-4 py-2 w-full md:w-1/3 flex items-center justify-left gap-2'>
+      <MdSearch size={20}/>
+        <input
         type="text"
         placeholder="Rechercher un menu..."
         value={search}
+        id='search'
         onChange={e => setSearch(e.target.value)}
-        className="border rounded-lg px-4 py-2 w-full md:w-1/3"
+        className='focus:outline-none w-full'
+        autoComplete='off'
       />
+      </div>
 
       {/* Tri */}
       <select

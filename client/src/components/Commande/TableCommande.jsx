@@ -30,13 +30,13 @@ const TableCommande = ({ commandes }) => (
             ))}
           </td>
           <td>
-            {cmd.details.map((val)=>(
-              <p>{val.prix} Ar</p>
+            {cmd.details.map((d,i)=>(
+              <p key={i}>{d.prix} Ar</p>
             ))}
           </td>
           <td>
-            {cmd.details.map((val)=>(
-              <p>{val.quantite}</p>
+            {cmd.details.map((d,i)=>(
+              <p key={i}>{d.quantite}</p>
             ))}
           </td>
           <td className="font-semibold">

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../service/api'
+import { groupCommande } from '../../utils/groupCommande'
 
 const CommandeForm = ({ onClose, setCommandes }) => {
     const [menus, setMenus] = useState([])
@@ -66,6 +67,9 @@ const CommandeForm = ({ onClose, setCommandes }) => {
         }
 
         await api.post('/commande', payload)
+        api.get('/commande').then(res => {
+            setCommandes(groupCommande(res.data))
+        })
         onClose()
     }
 
