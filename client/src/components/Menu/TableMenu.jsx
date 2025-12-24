@@ -1,37 +1,42 @@
-import React from 'react'
-import { BiEdit, BiTrash } from 'react-icons/bi'
+import { Edit2, Trash2 } from "lucide-react"
 
 const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full bg-white shadow rounded-lg">
-        <thead className="bg-gray-100 text-gray-600">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-600">
+      <table className="w-full bg-white dark:bg-slate-800 shadow-sm">
+        <thead className="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
           <tr>
-            <th className="p-3 text-left">Nom</th>
-            <th className="p-3">Catégorie</th>
-            <th className="p-3">Prix</th>
-            <th className="p-3">Actions</th>
+            <th className="p-4 text-left text-sm font-semibold text-slate-900 dark:text-white">Nom</th>
+            <th className="p-4 text-center text-sm font-semibold text-slate-900 dark:text-white">Catégorie</th>
+            <th className="p-4 text-center text-sm font-semibold text-slate-900 dark:text-white">Prix</th>
+            <th className="p-4 text-center text-sm font-semibold text-slate-900 dark:text-white">Actions</th>
           </tr>
         </thead>
 
-        <tbody>
-          {menuList.map(item => (
-            <tr key={item.id} className="border-t hover:bg-gray-50">
-              <td className="p-3">{item.nom}</td>
-              <td className="p-3 text-center">{item.categorie}</td>
-              <td className="p-3 text-center">{item.prix} Ar</td>
-              <td className="p-3 flex justify-center gap-3">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-600">
+          {menuList.map((item) => (
+            <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              <td className="p-4 text-slate-900 dark:text-white font-medium">{item.nom}</td>
+              <td className="p-4 text-center">
+                <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium">
+                  {item.categorie}
+                </span>
+              </td>
+              <td className="p-4 text-center text-slate-900 dark:text-white font-semibold">{item.prix} Ar</td>
+              <td className="p-4 flex justify-center gap-2">
                 <button
                   onClick={() => setSelectedMenu(item)}
-                  className="text-emerald-600 hover:text-emerald-800"
+                  className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                  aria-label="Modifier"
                 >
-                  <BiEdit size={18} />
+                  <Edit2 size={18} />
                 </button>
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                  aria-label="Supprimer"
                 >
-                  <BiTrash size={18} />
+                  <Trash2 size={18} />
                 </button>
               </td>
             </tr>
