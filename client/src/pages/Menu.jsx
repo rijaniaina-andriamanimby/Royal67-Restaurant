@@ -41,8 +41,13 @@ const Menu = () => {
   const handleDelete = async (id) => {
     const confirm = await FeedBackService.confirm()
     if (confirm) {
-      await api.delete(`/menu/${id}`)
-      setMenuList(prev => prev.filter(i => i.id !== id))
+      try {
+        await api.delete(`/menu/${id}`)
+        setMenuList(prev => prev.filter(i => i.id !== id))
+        FeedBackService.success()
+      } catch (error) {
+        FeedBackService.error()
+      }
     }
   }
 
@@ -55,7 +60,7 @@ const Menu = () => {
           onClick={() => { setSelectedMenu(null); setOpenModal(true) }}
           className="bg-emerald-600 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center"
         >
-          <BiPlusCircle /> Ajouter
+          <BiPlusCircle /> Nouvelle menu
         </button>
       </div>
 
