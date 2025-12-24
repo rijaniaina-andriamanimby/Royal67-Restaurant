@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import api from "../service/api"
 import { groupCommande } from "../utils/groupCommande"
@@ -42,7 +40,7 @@ const Commande = () => {
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 transition-colors">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">

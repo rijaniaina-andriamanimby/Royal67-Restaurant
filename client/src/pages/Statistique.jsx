@@ -4,7 +4,6 @@ import StatsCards from "../components/Statistique/StatsCards"
 import TopMenusChart from "../components/Statistique/TopMenusChart"
 import StatsFilter from "../components/Statistique/StatsFilter"
 import SalesByDayChart from "../components/Statistique/SalesByDayChart "
-import CategoryStatsChart from "../components/Statistique/CategoryStatsChart"
 import PaymentsHistory from "../components/Statistique/PaymentsHistory "
 import { BarChart3 } from "lucide-react"
 
@@ -53,7 +52,7 @@ const Statistique = () => {
     )
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white p-6 dark:from-blue-900 dark:to-blue-950">
+    <div className="bg-linear-to-br from-blue-50 to-white p-6 dark:from-blue-900 dark:to-blue-950">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">

@@ -4,8 +4,7 @@ const StatsFilter = ({ filter, setFilter }) => {
   const filterOptions = [
     { type: "day", label: "Jour", icon: Clock },
     { type: "week", label: "Semaine", icon: BarChart3 },
-    { type: "month", label: "Mois", icon: Calendar },
-    { type: "custom", label: "Période", icon: DateRange },
+    { type: "month", label: "Mois", icon: Calendar }
   ]
 
   return (

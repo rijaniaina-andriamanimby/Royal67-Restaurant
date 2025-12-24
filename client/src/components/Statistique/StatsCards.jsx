@@ -1,7 +1,7 @@
 import { TrendingUp, ShoppingCart, DollarSign } from "lucide-react"
 
 const Card = ({ label, value, icon: Icon, trend }) => (
-  <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+  <div className="bg-linear-to-br from-blue-50 to-white border border-blue-100 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
       <div className="flex-1">
         <p className="text-sm text-gray-600 font-medium mb-2">{label}</p>

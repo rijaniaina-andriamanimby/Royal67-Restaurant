@@ -15,7 +15,6 @@ const PaymentsHistory = ({ data }) => (
           <th className="text-left py-3 px-4 font-semibold text-gray-700">Rendu</th>
           <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
           <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-          <th className="text-center py-3 px-4 font-semibold text-gray-700"></th>
         </tr>
       </thead>
       <tbody>
@@ -39,11 +38,6 @@ const PaymentsHistory = ({ data }) => (
             <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-400" />
               {new Date(p.date).toLocaleString("fr-FR")}
-            </td>
-            <td className="py-3 px-4 text-center">
-              <button className="p-1 hover:bg-gray-200 rounded transition-colors">
-                <MoreVertical className="w-4 h-4 text-gray-400" />
-              </button>
             </td>
           </tr>
         ))}

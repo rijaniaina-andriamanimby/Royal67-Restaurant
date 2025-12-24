@@ -4,7 +4,7 @@ import NavBar from '../components/NavBar'
 
 const BaseLayout = () => {
   return (
-    <div className='bg-gray-50 dark:bg-slate-900 min-h-screen'>
+    <div className='bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors'>
       <NavBar/>
       <Outlet/>
     </div>
