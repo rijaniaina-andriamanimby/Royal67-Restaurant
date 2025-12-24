@@ -10,7 +10,7 @@ import PaymentsHistory from "../components/Statistique/PaymentsHistory "
 
 const Statistique = () => {
   const [stats, setStats] = useState(null)
-  const [filter, setFilter] = useState("week")
+  const [filter, setFilter] = useState("month")
   const [sales, setSales] = useState([])
   const [categories, setCategories] = useState([])
   const [payments, setPayments] = useState([])
@@ -53,8 +53,6 @@ const Statistique = () => {
       <StatsFilter filter={filter} setFilter={setFilter} />
 
       <SalesByDayChart data={sales} />
-
-      <CategoryStatsChart data={categories} />
 
       <PaymentsHistory data={payments} />
     </div>

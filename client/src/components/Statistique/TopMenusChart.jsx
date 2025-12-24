@@ -9,7 +9,16 @@ const TopMenusChart = ({ data }) => (
         <XAxis dataKey="nom" />
         <YAxis />
         <Tooltip />
-        <Bar dataKey="total" />
+        <Bar
+          dataKey="total"
+          fill="#3b82f6"
+          radius={[5, 5, 0, 0]}
+          barSize={100}
+          isAnimationActive={true} // Activé par défaut
+          animationBegin={200}     // Délai avant le début (ms)
+          animationDuration={1500}  // Durée de l'animation (ms)
+          animationEasing="ease-out" // Type de mouvement (linear, ease, ease-in, ease-out, ease-in-out)
+        />
       </BarChart>
     </ResponsiveContainer>
   </div>
