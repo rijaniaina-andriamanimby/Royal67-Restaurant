@@ -31,7 +31,7 @@ const TableCommande = ({ commandes }) => (
           </td>
           <td>
             {cmd.details.map((val)=>(
-              <p>{val.prix}</p>
+              <p>{val.prix} Ar</p>
             ))}
           </td>
           <td>
