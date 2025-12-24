@@ -1,84 +1,85 @@
-import React, { useEffect, useState } from 'react'
-import api from '../service/api'
-import { groupCommande } from '../utils/groupCommande'
-import CommandeToolbar from '../components/Commande/CommandeToolbar'
-import TableCommande from '../components/Commande/TableCommande'
-import CommandeCards from '../components/Commande/CommandeCards'
-import Pagination from '../components/Pagination'
-import CommandeModal from '../components/Commande/CommandeModal'
-import { BiPlus, BiPlusCircle } from 'react-icons/bi'
+"use client"
+
+import { useEffect, useState } from "react"
+import api from "../service/api"
+import { groupCommande } from "../utils/groupCommande"
+import CommandeToolbar from "../components/Commande/CommandeToolbar"
+import TableCommande from "../components/Commande/TableCommande"
+import CommandeCards from "../components/Commande/CommandeCards"
+import Pagination from "../components/Pagination"
+import CommandeModal from "../components/Commande/CommandeModal"
+import { Plus, ShoppingCart } from "lucide-react"
 
 const ITEMS_PER_PAGE = 5
 
 const Commande = () => {
   const [commandes, setCommandes] = useState([])
-  const [search, setSearch] = useState('')
-  const [sort, setSort] = useState('')
-  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("")
+  const [sort, setSort] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedCommande, setSelectedCommande] = useState(null)
   const [openModal, setOpenModal] = useState(false)
 
   useEffect(() => {
-    api.get('/commande').then(res => {
+    api.get("/commande").then((res) => {
       setCommandes(groupCommande(res.data))
     })
   }, [])
 
-  /* 🔍 Recherche */
-  let filtered = commandes.filter(c =>
-    c.nomTable.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = commandes.filter((c) => c.nomTable.toLowerCase().includes(search.toLowerCase()))
 
-  /* 🔃 Tri */
-  if (sort === 'date_desc') filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
-  if (sort === 'date_asc') filtered.sort((a, b) => new Date(a.date) - new Date(b.date))
+  if (sort === "date_desc") filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
+  if (sort === "date_asc") filtered.sort((a, b) => new Date(a.date) - new Date(b.date))
+  if (sort === "total_desc")
+    filtered.sort((a, b) => {
+      const totalA = a.details.reduce((s, d) => s + d.prix * d.quantite, 0)
+      const totalB = b.details.reduce((s, d) => s + d.prix * d.quantite, 0)
+      return totalB - totalA
+    })
 
-  /* 📄 Pagination */
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const start = (page - 1) * ITEMS_PER_PAGE
+  const start = (currentPage - 1) * ITEMS_PER_PAGE
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
 
-  const total = (cmd) =>
-    cmd.details.reduce((s, d) => s + d.prix * d.quantite, 0)
-
   return (
-    <div className="p-6">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Commandes</h1>
-        <button
-          onClick={() => setOpenModal(true)}
-          className="bg-emerald-600 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center"
-        >
-          <BiPlusCircle /> Nouvelle commande
-        </button>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 transition-colors">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-600 rounded-lg">
+              <ShoppingCart size={28} className="text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gestion des Commandes</h1>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedCommande(null)
+              setOpenModal(true)
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl"
+          >
+            <Plus size={20} />
+            Nouvelle Commande
+          </button>
+        </div>
+
+        {/* Toolbar */}
+        <CommandeToolbar search={search} setSearch={setSearch} sort={sort} setSort={setSort} />
+
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <TableCommande commandes={paginated} />
+        </div>
+
+        {/* Mobile Cards */}
+        <CommandeCards commandes={paginated} />
+
+        {/* Pagination */}
+        <Pagination currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
+
+        {/* Modal */}
+        {openModal && <CommandeModal onClose={() => setOpenModal(false)} setCommandes={setCommandes} />}
       </div>
-
-      <CommandeToolbar
-        search={search}
-        setSearch={setSearch}
-        sort={sort}
-        setSort={setSort}
-      />
-
-      {/* Desktop */}
-      <div className="hidden md:block">
-        <TableCommande commandes={paginated} />
-      </div>
-
-      {/* Mobile */}
-      <CommandeCards commandes={paginated} />
-
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        setCurrentPage={setPage}
-      />
-
-      {openModal && (
-        <CommandeModal
-          onClose={() => setOpenModal(false)}
-          setCommandes={setCommandes}
-        />
-      )}
     </div>
   )
 }
