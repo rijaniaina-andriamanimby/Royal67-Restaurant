@@ -10,7 +10,7 @@ CREATE TABLE menu (
 CREATE TABLE commande(
     id SERIAL PRIMARY KEY,
     nomTable VARCHAR(20),
-    date TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+    date TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE commandeDetail(

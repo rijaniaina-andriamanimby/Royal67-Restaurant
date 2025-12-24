@@ -2,7 +2,7 @@ const PaymentsHistory = ({ data }) => (
   <div className="border rounded-xl p-4 bg-white shadow-sm">
     <h3 className="font-semibold mb-2">Historique des paiements</h3>
 
-    <table className="w-full text-sm">
+    <table className="w-full text-sm text-center">
       <thead>
         <tr>
           <th>Table</th>

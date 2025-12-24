@@ -6,9 +6,25 @@ const SalesByDayChart = ({ data }) => (
 
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
-        <XAxis dataKey="jour" />
+        <XAxis
+          dataKey="jour"
+          tickFormatter={(value) =>
+            new Date(value).toLocaleDateString("fr-FR", {
+              day: "2-digit",
+              month: "short"
+            })
+          }
+        />
         <YAxis />
-        <Tooltip />
+        <Tooltip
+          labelFormatter={(value) =>
+            new Date(value).toLocaleDateString("fr-FR", {
+              weekday: "short",
+              day: "2-digit",
+              month: "long"
+            })
+          }
+        />
         <Line dataKey="total" />
       </LineChart>
     </ResponsiveContainer>
