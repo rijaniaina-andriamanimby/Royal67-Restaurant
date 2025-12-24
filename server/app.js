@@ -11,8 +11,10 @@ app.use(cors({
 //------------------------
 const menuRouter = require('./routes/menu.routes')
 const commandeRouter = require('./routes/commande.routes')
+const statsRouter = require('./routes/stats.routes')
 
 app.use('/menu', menuRouter)
 app.use('/commande', commandeRouter)
+app.use('/stats', statsRouter)
 
 module.exports = app
