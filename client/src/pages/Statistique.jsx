@@ -53,12 +53,12 @@ const Statistique = () => {
     )
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white p-6">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white p-6 dark:from-blue-900 dark:to-blue-950">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <BarChart3 className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Statistiques globales</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-200">Statistiques globales</h1>
         </div>
 
         {/* Stats Cards */}
@@ -75,8 +75,9 @@ const Statistique = () => {
         {/* Sales Chart */}
         <SalesByDayChart data={sales} />
 
-        {/* Category Chart */}
+        {/* Category Chart
         <CategoryStatsChart data={categories} />
+        */}
 
         {/* Payments History */}
         <PaymentsHistory data={payments} />
