@@ -10,7 +10,7 @@ const NavBar = () => {
         return false
     }
     return (
-        <header className='flex justify-between h-16 bg-blue-500 text-white font-semibold py-2 px-4 items-center dark:bg-blue-950'>
+        <header className='flex justify-between h-16 bg-blue-500 text-white font-semibold py-2 px-4 items-center dark:bg-blue-950 sticky top-0'>
             <div>
                 <Link to={'/'}>TIKO'RESTO</Link>
             </div>
