@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import api from "../../service/api"
 import { groupCommande } from "../../utils/groupCommande"
 import { Plus, Minus, Trash2, DollarSign } from "lucide-react"
+import { pdf } from "@react-pdf/renderer"
+import Recu from "../pdf/Recu"
 
 const CommandeForm = ({ onClose, setCommandes }) => {
   const [menus, setMenus] = useState([])
@@ -49,10 +51,30 @@ const CommandeForm = ({ onClose, setCommandes }) => {
       typePaiement,
     }
 
-    await api.post("/commande", payload)
+    const response = await api.post("/commande", payload)
     api.get("/commande").then((res) => {
       setCommandes(groupCommande(res.data))
     })
+
+    // Génération automatique et téléchargement du PDF
+    const blob = await pdf(
+      <Recu
+        idCommande={response.data.idCommande}
+        data={{
+          ...payload,
+          commandeDetail: panier // ← inclut nom / prix
+        }}
+      />
+    ).toBlob();
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `recu_${response.data.idCommande}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+
     onClose()
   }
 
