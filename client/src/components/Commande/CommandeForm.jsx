@@ -57,23 +57,34 @@ const CommandeForm = ({ onClose, setCommandes }) => {
     })
 
     // Génération automatique et téléchargement du PDF
+    //const blob = await pdf(
+    //  <Recu
+    //    idCommande={response.data.idCommande}
+    //    data={{
+    //      ...payload,
+    //      commandeDetail: panier // ← inclut nom / prix
+    //    }}
+    //  />
+    //).toBlob();
+
+    //const url = URL.createObjectURL(blob);
+    //const link = document.createElement("a");
+    //link.href = url;
+    //link.download = `recu_${response.data.idCommande}.pdf`;
+    //link.click();
+    //URL.revokeObjectURL(url);
+
     const blob = await pdf(
       <Recu
         idCommande={response.data.idCommande}
-        data={{
-          ...payload,
-          commandeDetail: panier // ← inclut nom / prix
-        }}
+        data={{ ...payload, commandeDetail: panier }}
       />
     ).toBlob();
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `recu_${response.data.idCommande}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
 
+    await window.electronAPI.printPdf(uint8);
 
     onClose()
   }
