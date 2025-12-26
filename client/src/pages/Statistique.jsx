@@ -52,7 +52,7 @@ const Statistique = () => {
     )
 
   return (
-    <div className="bg-linear-to-br from-blue-50 to-white p-6 dark:from-blue-900 dark:to-blue-950">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
