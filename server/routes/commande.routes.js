@@ -3,6 +3,6 @@ const CommandeController = require('../controller/commande.controller')
 
 router.get('/', CommandeController.getAll)
 router.post('/', CommandeController.insert)
-router.delete('/', CommandeController.delete)
+router.delete('/:id', CommandeController.delete)
 
 module.exports = router

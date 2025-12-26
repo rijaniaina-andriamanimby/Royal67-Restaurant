@@ -7,6 +7,7 @@ import CommandeCards from "../components/Commande/CommandeCards"
 import Pagination from "../components/Pagination"
 import CommandeModal from "../components/Commande/CommandeModal"
 import { Plus, ShoppingCart } from "lucide-react"
+import FeedBackService from '../service/FeedBackService'
 
 const ITEMS_PER_PAGE = 5
 
@@ -39,6 +40,21 @@ const Commande = () => {
   const start = (currentPage - 1) * ITEMS_PER_PAGE
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
 
+  const handleDelete = async (id) => {
+    const result = await FeedBackService.confirm()
+    if (result) {
+      try {
+        await api.delete('/commande/' + id)
+        FeedBackService.success()
+        api.get("/commande").then((res) => {
+          setCommandes(groupCommande(res.data))
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -66,7 +82,7 @@ const Commande = () => {
 
         {/* Desktop Table */}
         <div className="hidden md:block">
-          <TableCommande commandes={paginated} />
+          <TableCommande commandes={paginated} handleDelete={handleDelete} />
         </div>
 
         {/* Mobile Cards */}
