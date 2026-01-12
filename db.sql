@@ -3,7 +3,7 @@ CREATE DATABASE restaurant;
 CREATE TABLE menu (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(50) NOT NULL,
-    categorie VARCHAR(50) NOT NULL,
+    categorie INT NOT NULL,
     prix INT
 );
 
@@ -27,3 +27,10 @@ CREATE TABLE paiement(
     typePaiment VARCHAR(20),
     idCommande INT REFERENCES commande(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE categorie(
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(50)
+);
+
+alter table menu add constraint fk_menu_categorie foreign key (categorie) references categorie(id);
