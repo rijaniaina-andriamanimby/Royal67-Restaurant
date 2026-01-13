@@ -7,6 +7,7 @@ import MenuToolbar from "../components/Menu/MenuToolbar"
 import Pagination from "../components/Pagination"
 import MenuModal from "../components/Menu/MenuModal"
 import { Plus, UtensilsCrossed } from "lucide-react"
+import ModalCategorie from "../components/Categorie/ModalCategorie"
 
 const ITEMS_PER_PAGE = 6
 
@@ -17,6 +18,7 @@ const Menu = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedMenu, setSelectedMenu] = useState(null)
   const [openModal, setOpenModal] = useState(false)
+  const [openCategorie, setOpenCategorie] = useState(false)
 
   useEffect(() => {
     api.get("/menu").then((res) => setMenuList(res.data))
@@ -60,16 +62,23 @@ const Menu = () => {
             </div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gestion des Menus</h1>
           </div>
-          <button
-            onClick={() => {
-              setSelectedMenu(null)
-              setOpenModal(true)
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl"
-          >
-            <Plus size={20} />
-            Nouveau Menu
-          </button>
+          <div className="flex gap-2 items-center justify-center">
+            <button
+              onClick={() => {
+                setSelectedMenu(null)
+                setOpenModal(true)
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl">
+              <Plus size={20} />
+              Nouveau Menu
+            </button>
+            <button
+              onClick={() => setOpenCategorie(!openCategorie)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl">
+              <Plus size={20} />
+              Catégorie
+            </button>
+          </div>
         </div>
 
         {/* Toolbar */}
@@ -102,6 +111,7 @@ const Menu = () => {
 
         {/* Modal */}
         {openModal && <MenuModal menu={selectedMenu} setMenuList={setMenuList} onClose={() => setOpenModal(false)} />}
+        {openCategorie && (<ModalCategorie openCategorie={openCategorie} setOpenCategorie={setOpenCategorie}/>)}
       </div>
     </div>
   )
