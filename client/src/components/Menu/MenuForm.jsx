@@ -2,7 +2,7 @@ import { useState } from "react"
 import api from "../../service/api"
 import { Save, X } from "lucide-react"
 
-const MenuForm = ({ menu, setMenuList, onClose }) => {
+const MenuForm = ({ menu, setMenuList, onClose, categorieList }) => {
   const [nom, setNom] = useState(menu?.nom || "")
   const [categorie, setCategorie] = useState(menu?.categorie || "")
   const [prix, setPrix] = useState(menu?.prix || "")
@@ -39,17 +39,20 @@ const MenuForm = ({ menu, setMenuList, onClose }) => {
 
       <div className="space-y-2">
         <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Catégorie</label>
-        <input
-          list="categories"
+        <select
+          name="categorie"
+          id="categorie"
           className="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all"
           value={categorie}
           onChange={(e) => setCategorie(e.target.value)}
-        />
-        <datalist id="categories">
-          <option value="Boisson" />
-          <option value="Plat" />
-          <option value="Dessert" />
-        </datalist>
+        >
+          <option value="">Choisir</option>
+          {
+            categorieList.map((item)=>(
+              <option value={item.id} key={item.id}>{item.nom}</option>
+            ))
+          }
+        </select>
       </div>
 
       <div className="space-y-2">

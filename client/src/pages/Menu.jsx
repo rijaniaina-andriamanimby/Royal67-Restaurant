@@ -89,7 +89,12 @@ const Menu = () => {
         </div>
 
         {/* Toolbar */}
-        <MenuToolbar search={search} setSearch={setSearch} sort={sort} setSort={setSort} />
+        <MenuToolbar 
+          search={search} 
+          setSearch={setSearch} 
+          sort={sort} 
+          setSort={setSort} 
+        />
 
         {/* Desktop Table */}
         <div className="hidden md:block">
@@ -118,14 +123,20 @@ const Menu = () => {
 
         {/* Modal */}
         {openModal && (
-          <MenuModal menu={selectedMenu} setMenuList={setMenuList} onClose={() => setOpenModal(false)} />
+          <MenuModal 
+            menu={selectedMenu} 
+            categories={categories} 
+            setMenuList={setMenuList} 
+            onClose={() => setOpenModal(false)}
+          />
         )}
         {openCategorie && (
           <ModalCategorie
             openCategorie={openCategorie}
             setOpenCategorie={setOpenCategorie}
             categories={categories}
-            getCategorie={getCategorie} />
+            getCategorie={getCategorie} 
+          />
         )}
       </div>
     </div>
