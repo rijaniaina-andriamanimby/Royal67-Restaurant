@@ -1,12 +1,24 @@
 import { Edit2, Trash2 } from 'lucide-react'
 import React from 'react'
+import FeedbackService from '../../service/FeedBackService'
+import api from '../../service/api'
 
-const data = [
-    {id : "1", nom:"Pizza"},
-    {id : "2", nom:"Burger"},
-    {id : "3", nom:"Salade"}
-]
-const TableCategorie = ({categories = data}) => {
+const TableCategorie = ({categories, getCategorie}) => {
+
+  const handleDelete = async (id) => {
+    const confirm = await FeedbackService.confirm()
+    if(confirm){
+      try {
+        await api.delete('/categorie/' + id)
+        FeedbackService.success()
+        getCategorie()
+      } catch (error) {
+        console.log(error)
+        FeedbackService.error()
+      }
+    }
+  }
+
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-600 mt-2">
       <table className="w-full bg-white dark:bg-slate-800 shadow-sm">
@@ -30,7 +42,7 @@ const TableCategorie = ({categories = data}) => {
                   <Edit2 size={18} />
                 </button>
                 <button
-                  onClick={() => {}}
+                  onClick={() => handleDelete(item.id)}
                   className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   aria-label="Supprimer"
                 >

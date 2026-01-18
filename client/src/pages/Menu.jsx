@@ -19,9 +19,16 @@ const Menu = () => {
   const [selectedMenu, setSelectedMenu] = useState(null)
   const [openModal, setOpenModal] = useState(false)
   const [openCategorie, setOpenCategorie] = useState(false)
+  const [categories, setCategories] = useState([])
+
+  const getCategorie = async () => {
+    const response = await api.get('/categorie')
+    setCategories(response.data)
+  }
 
   useEffect(() => {
     api.get("/menu").then((res) => setMenuList(res.data))
+    getCategorie()
   }, [])
 
   /* 🔍 Recherche */
@@ -110,8 +117,16 @@ const Menu = () => {
         <Pagination currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
 
         {/* Modal */}
-        {openModal && <MenuModal menu={selectedMenu} setMenuList={setMenuList} onClose={() => setOpenModal(false)} />}
-        {openCategorie && (<ModalCategorie openCategorie={openCategorie} setOpenCategorie={setOpenCategorie}/>)}
+        {openModal && (
+          <MenuModal menu={selectedMenu} setMenuList={setMenuList} onClose={() => setOpenModal(false)} />
+        )}
+        {openCategorie && (
+          <ModalCategorie
+            openCategorie={openCategorie}
+            setOpenCategorie={setOpenCategorie}
+            categories={categories}
+            getCategorie={getCategorie} />
+        )}
       </div>
     </div>
   )

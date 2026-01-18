@@ -3,7 +3,7 @@ import React from 'react'
 import Input from './Input'
 import TableCategorie from './TableCategorie'
 
-const ModalCategorie = ({openCategorie, setOpenCategorie}) => {
+const ModalCategorie = ({openCategorie, setOpenCategorie, categories, getCategorie}) => {
   return (
     <div className='fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex justify-center p-4 backdrop-blur-sm'>
         <div className="absolute inset-0"  onClick={()=>setOpenCategorie(false)}/>
@@ -20,8 +20,8 @@ const ModalCategorie = ({openCategorie, setOpenCategorie}) => {
         </div>
 
         <div className="overflow-y-auto max-h-[calc(90vh-70px)] px-6 py-4">
-          <Input/>
-          <TableCategorie/>
+          <Input getCategorie={getCategorie}/>
+          <TableCategorie categories={categories} getCategorie={getCategorie}/>
         </div>
       </div>
     </div>
