@@ -19,7 +19,7 @@ const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
               <td className="p-4 text-slate-900 dark:text-white font-medium">{item.nom}</td>
               <td className="p-4 text-center">
                 <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded-full text-sm font-medium">
-                  {item.categorie}
+                  {item.cnom}
                 </span>
               </td>
               <td className="p-4 text-center text-slate-900 dark:text-white font-semibold">{item.prix} Ar</td>
