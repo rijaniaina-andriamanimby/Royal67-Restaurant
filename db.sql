@@ -33,4 +33,4 @@ CREATE TABLE categorie(
     nom VARCHAR(50)
 );
 
-alter table menu add constraint fk_menu_categorie foreign key (categorie) references categorie(id);
+alter table menu add constraint fk_menu_categorie foreign key (categorie) references categorie(id) ON DELETE CASCADE ON UPDATE CASCADE;

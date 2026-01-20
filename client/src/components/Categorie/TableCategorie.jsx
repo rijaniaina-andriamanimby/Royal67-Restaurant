@@ -35,13 +35,6 @@ const TableCategorie = ({categories, getCategorie}) => {
               <td className="p-4 text-slate-900 dark:text-white font-medium">{item.nom}</td>
               <td className="p-4 flex justify-center gap-2">
                 <button
-                  onClick={() => {}}
-                  className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                  aria-label="Modifier"
-                >
-                  <Edit2 size={18} />
-                </button>
-                <button
                   onClick={() => handleDelete(item.id)}
                   className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   aria-label="Supprimer"
