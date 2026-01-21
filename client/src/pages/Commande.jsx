@@ -18,10 +18,14 @@ const Commande = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCommande, setSelectedCommande] = useState(null)
   const [openModal, setOpenModal] = useState(false)
+  const [categorieList, setCategorieList] = useState([])
 
   useEffect(() => {
     api.get("/commande").then((res) => {
       setCommandes(groupCommande(res.data))
+    })
+    api.get("/categorie").then((res)=>{
+      setCategorieList(res.data)
     })
   }, [])
 
@@ -92,7 +96,9 @@ const Commande = () => {
         <Pagination currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
 
         {/* Modal */}
-        {openModal && <CommandeModal onClose={() => setOpenModal(false)} setCommandes={setCommandes} />}
+        {openModal && (
+          <CommandeModal onClose={() => setOpenModal(false)} setCommandes={setCommandes} categorieList={categorieList} />
+        )}
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { X } from "lucide-react"
 import CommandeForm from "./CommandeForm"
 
-const CommandeModal = ({ onClose, setCommandes }) => {
+const CommandeModal = ({ onClose, setCommandes, categorieList }) => {
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
@@ -18,7 +18,7 @@ const CommandeModal = ({ onClose, setCommandes }) => {
         </div>
 
         <div className="overflow-y-auto max-h-[calc(90vh-70px)] px-6 py-4">
-          <CommandeForm onClose={onClose} setCommandes={setCommandes} />
+          <CommandeForm onClose={onClose} setCommandes={setCommandes} categorieList={categorieList} />
         </div>
       </div>
     </div>

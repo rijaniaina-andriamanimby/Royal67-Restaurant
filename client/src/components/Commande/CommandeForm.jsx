@@ -5,15 +5,19 @@ import { Plus, Minus, Trash2, DollarSign } from "lucide-react"
 import { pdf } from "@react-pdf/renderer"
 import Recu from "../pdf/Recu"
 
-const CommandeForm = ({ onClose, setCommandes }) => {
+const CommandeForm = ({ onClose, setCommandes, categorieList }) => {
+  const [menusList, setMenusList] = useState([])
   const [menus, setMenus] = useState([])
   const [nomTable, setNomTable] = useState("")
   const [panier, setPanier] = useState([])
   const [payer, setPayer] = useState("")
   const [typePaiement, setTypePaiement] = useState("Espèce")
-
+  const [categorieSelected, setCategorieSelected] = useState(0)
   useEffect(() => {
-    api.get("/menu").then((res) => setMenus(res.data))
+    api.get("/menu").then((res) => {
+      setMenusList(res.data)
+      setMenus(res.data)
+    })
   }, [])
 
   const addToPanier = (menu) => {
@@ -89,18 +93,41 @@ const CommandeForm = ({ onClose, setCommandes }) => {
     onClose()
   }
 
+  useEffect(() => {
+    if (categorieSelected == 0) return setMenus(menusList)
+    const menu = menusList.filter((val) => (
+      val.categorie == categorieSelected
+    ))
+    setMenus(menu)
+  }, [categorieSelected])
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de la table</label>
-        <input
-          type="text"
-          className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition"
-          placeholder="Table 1"
-          value={nomTable}
-          onChange={(e) => setNomTable(e.target.value)}
-          required
-        />
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de la table</label>
+          <input
+            type="text"
+            className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition"
+            placeholder="Table 1"
+            value={nomTable}
+            onChange={(e) => setNomTable(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categorie</label>
+          <select name="categorie" id="categorie" className="w-full px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition"
+            value={categorieSelected}
+            onChange={(e) => setCategorieSelected(e.target.value)}>
+            <option value={0}>Séléctionner</option>
+            {
+              categorieList.map((item) => (
+                <option value={item.id} key={item.id}>{item.nom}</option>
+              ))
+            }
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
