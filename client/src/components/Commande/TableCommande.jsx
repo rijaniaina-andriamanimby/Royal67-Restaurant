@@ -33,6 +33,7 @@ const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
                   month: "short",
                   hour: "2-digit",
                   minute: "2-digit",
+                  year: '2-digit'
                 })}
               </td>
               <td className="p-4 text-slate-700 dark:text-slate-300 text-sm">
@@ -40,7 +41,9 @@ const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
                   <span className="font-medium">{cmd.details?.length || 0} article(s)</span>
                   {cmd.details?.[0] && (
                     <span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded">
-                      {cmd.details[0].nom}
+                      {cmd.details.map((item)=>(
+                        <p key={item.nom}>{item.nom}</p>
+                      ))}
                     </span>
                   )}
                 </div>
