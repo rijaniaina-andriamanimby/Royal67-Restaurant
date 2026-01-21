@@ -15,12 +15,19 @@ exports.getGlobalStats = async (req, res) => {
 exports.getPeriodStats = async (req, res) => {
   try {
     const { start, end } = req.query
+
+    if (!start || !end) {
+      return res.status(400).json({ message: "Dates manquantes" })
+    }
+
     const result = await Stats.getSalesByPeriod(start, end)
     res.status(200).json(result)
   } catch (e) {
-    res.status(500).json({ message: "Erreur période", e })
+    console.error("Erreur période:", e)
+    res.status(500).json({ message: "Erreur période", error: e.message })
   }
 }
+
 
 exports.getCategoryStats = async (_, res) => {
   try {

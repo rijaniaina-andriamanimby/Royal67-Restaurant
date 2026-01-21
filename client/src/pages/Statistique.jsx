@@ -21,12 +21,30 @@ const Statistique = () => {
     const now = new Date()
     let start
 
-    if (filter === "day") start = new Date(now.setHours(0, 0, 0)).toDateString()
-    if (filter === "week") start = new Date(now.setDate(now.getDate() - 7)).toLocaleDateString()
-    if (filter === "month") start = new Date(now.setMonth(now.getMonth() - 1)).toLocaleDateString()
+    if (filter === "day") {
+      const d = new Date()
+      d.setHours(0, 0, 0, 0)
+      start = d.toISOString().split("T")[0]
+    }
+    if (filter === "week") {
+      const d = new Date()
+      d.setDate(d.getDate() - 7)
+      start = d.toISOString().split("T")[0]
+    }
+    if (filter === "month") {
+      const d = new Date()
+      d.setMonth(d.getMonth() - 1)
+      start = d.toISOString().split("T")[0]
+    }
+
+    const endDate = new Date()
+    endDate.setHours(23, 59, 59, 999)
+
+    const end = endDate.toISOString()
+
 
     const resSales = await api.get(`/stats/period`, {
-      params: { start, end: new Date() },
+      params: { start, end },
     })
 
     const resCat = await api.get("/stats/category")

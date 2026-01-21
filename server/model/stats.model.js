@@ -38,8 +38,8 @@ module.exports = {
   getSalesByPeriod: async (start, end) => {
     const result = await pool.query(`
       SELECT 
-        DATE(c.date) AS jour,
-        SUM(m.prix * cd.quantite) AS total
+        TO_CHAR(c.date, 'YYYY-MM-DD') AS jour,
+        SUM(m.prix * cd.quantite)::INT AS total
       FROM commande c
       JOIN commandeDetail cd ON cd.idCommande = c.id
       JOIN menu m ON m.id = cd.idMenu
