@@ -6,7 +6,7 @@ import MenuCards from "../components/Menu/MenuCards"
 import MenuToolbar from "../components/Menu/MenuToolbar"
 import Pagination from "../components/Pagination"
 import MenuModal from "../components/Menu/MenuModal"
-import { Plus, UtensilsCrossed } from "lucide-react"
+import { Plus, PlusCircle, Tags, UtensilsCrossed } from "lucide-react"
 import ModalCategorie from "../components/Categorie/ModalCategorie"
 
 const ITEMS_PER_PAGE = 6
@@ -76,13 +76,13 @@ const Menu = () => {
                 setOpenModal(true)
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl">
-              <Plus size={20} />
+              <PlusCircle size={20} />
               Nouveau Menu
             </button>
             <button
               onClick={() => setOpenCategorie(!openCategorie)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl">
-              <Plus size={20} />
+              <Tags size={20} />
               Catégorie
             </button>
           </div>

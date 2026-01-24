@@ -6,7 +6,7 @@ import TableCommande from "../components/Commande/TableCommande"
 import CommandeCards from "../components/Commande/CommandeCards"
 import Pagination from "../components/Pagination"
 import CommandeModal from "../components/Commande/CommandeModal"
-import { Plus, ShoppingCart } from "lucide-react"
+import { Plus, PlusCircle, ShoppingCart } from "lucide-react"
 import FeedBackService from '../service/FeedBackService'
 
 const ITEMS_PER_PAGE = 5
@@ -76,7 +76,7 @@ const Commande = () => {
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl"
           >
-            <Plus size={20} />
+            <PlusCircle size={20} />
             Nouvelle Commande
           </button>
         </div>

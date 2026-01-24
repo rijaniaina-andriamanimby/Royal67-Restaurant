@@ -1,4 +1,4 @@
-import { Edit2, Trash2 } from "lucide-react"
+import { Edit, Trash } from "lucide-react"
 
 const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (
@@ -29,14 +29,14 @@ const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
                   className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                   aria-label="Modifier"
                 >
-                  <Edit2 size={18} />
+                  <Edit size={18} />
                 </button>
                 <button
                   onClick={() => handleDelete(item.id)}
                   className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   aria-label="Supprimer"
                 >
-                  <Trash2 size={18} />
+                  <Trash size={18} />
                 </button>
               </td>
             </tr>

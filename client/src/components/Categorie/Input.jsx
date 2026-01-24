@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, PlusCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import FeedbackService from '../../service/FeedBackService'
 import api from '../../service/api'
@@ -29,7 +29,7 @@ const Input = ({ getCategorie }) => {
             <button
                 onClick={handleSubmit}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl">
-                <Plus size={20} />
+                <PlusCircle size={20} />
                 Ajouter
             </button>
         </div>
