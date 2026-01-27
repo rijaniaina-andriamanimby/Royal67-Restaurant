@@ -30,9 +30,9 @@ const NavBar = () => {
           {isMobileMenuOpen ? <BiX size={24} /> : <BiMenu size={24} />}
         </button>
           <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
-            <span className="text-white font-bold text-lg">T</span>
+            <span className="text-white font-bold text-lg">R</span>
           </div>
-          <span className="text-white font-bold text-xl tracking-tight">TIKO'RESTO</span>
+          <span className="text-white font-bold text-xl tracking-tight">ROYAL ANNEXE</span>
         </div>
         
 

@@ -24,7 +24,7 @@ const Recu = ({ idCommande, data }) => {
   return (
     <Document>
       <Page size="A6" style={styles.page}>
-        <Text style={styles.center}>Tiko'Resto</Text>
+        <Text style={styles.center}>ROYAL ANNEXE 67 HA</Text>
         <View style={styles.line} />
 
         <Text>Date : {date}</Text>

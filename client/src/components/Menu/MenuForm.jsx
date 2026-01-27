@@ -13,12 +13,12 @@ const MenuForm = ({ menu, setMenuList, onClose, categorieList }) => {
     if (menu) {
       const res = await api.put(`/menu/${menu.id}`, { nom, categorie, prix })
       setMenuList((prev) => prev.map((item) => (item.id === menu.id ? res.data : item)))
+      onClose()
     } else {
       const res = await api.post("/menu", { nom, categorie, prix })
       setMenuList((prev) => [...prev, res.data])
     }
 
-    onClose()
   }
 
   return (
