@@ -42,7 +42,7 @@ const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
                   {cmd.details?.[0] && (
                     <span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded">
                       {cmd.details.map((item)=>(
-                        <p key={item.nom}>{item.nom}</p>
+                        <p key={item.nom}>{item.nom} (x{item.quantite})</p>
                       ))}
                     </span>
                   )}
@@ -56,7 +56,7 @@ const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
                   {cmd.paiement?.typePaiement || "En attente"}
                 </span>
               </td>
-              <td className="p-4 flex justify-center gap-2">
+              <td className="p-4 flex justify-center items-center">
                 <button
                   onClick={() => handleDelete?.(cmd.id)}
                   className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"

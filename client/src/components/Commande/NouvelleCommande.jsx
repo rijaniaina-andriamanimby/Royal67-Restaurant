@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 import api from "../../service/api"
 import { groupCommande } from "../../utils/groupCommande"
-import {Plus,Minus,Trash2,ArrowLeft,ShoppingCart,DollarSign,Filter,Check,AlertCircle,Map,UtensilsCrossed} from "lucide-react"
+import { Plus, Minus, Trash2, ArrowLeft, ShoppingCart, DollarSign, Filter, Check, AlertCircle, Map, UtensilsCrossed } from "lucide-react"
+import { pdf } from "@react-pdf/renderer"
+import Recu from "../pdf/Recu"
 
 const NouvelleCommande = ({ onClose, setCommandes }) => {
     const [menusList, setMenusList] = useState([])
@@ -75,18 +77,56 @@ const NouvelleCommande = ({ onClose, setCommandes }) => {
             typePaiement,
         }
 
-        await api.post("/commande", payload)
+        const response = await api.post("/commande", payload)
+        const idCommande = response.data.idCommande
+
         if (setCommandes) {
             api.get("/commande").then((res) => {
                 setCommandes(groupCommande(res.data))
             })
+
         }
+        // 🖨️ impression automatique
+        await printPDF(idCommande, payload, panier)
         if (onClose) {
             onClose()
         } else {
             window.history.back()
         }
     }
+
+    const printPDF = async (idCommande, payload, panier) => {
+        const blob = await pdf(
+            <Recu
+                idCommande={idCommande}
+                data={{
+                    ...payload,
+                    commandeDetail: panier, // nom + prix + quantite
+                }}
+            />
+        ).toBlob()
+
+        const url = URL.createObjectURL(blob)
+        // 👇 affiche dans le navigateur
+        window.open(url, "_blank")
+        const iframe = document.createElement("iframe")
+        iframe.style.display = "none"
+        iframe.src = url
+
+        document.body.appendChild(iframe)
+
+        iframe.onload = () => {
+            iframe.contentWindow.focus()
+            iframe.contentWindow.print()
+
+            // nettoyage
+            setTimeout(() => {
+                URL.revokeObjectURL(url)
+                document.body.removeChild(iframe)
+            }, 1000)
+        }
+    }
+
 
     const isValidTable = nomTable.trim().length > 0
     const canSubmit = panier.length > 0 && isValidTable && payer && payer >= total
@@ -140,12 +180,6 @@ const NouvelleCommande = ({ onClose, setCommandes }) => {
                         onChange={(e) => setNomTable(e.target.value)}
                         required
                     />
-                    {isValidTable && (
-                        <div className="flex items-center gap-2 mt-3 text-white/90 text-sm">
-                            <Check size={16} />
-                            <span>Table validée</span>
-                        </div>
-                    )}
                 </div>
 
                 {/* CATEGORIES FILTER */}
