@@ -5,3 +5,8 @@
 button {
     cursor: pointer;
 }
+
+.Toastify__toast {
+  border-radius: 0.75rem; /* rounded-xl */
+  font-weight: 500;
+}

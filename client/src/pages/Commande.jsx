@@ -8,6 +8,7 @@ import Pagination from "../components/Pagination"
 import CommandeModal from "../components/Commande/CommandeModal"
 import { Plus, PlusCircle, ShoppingCart } from "lucide-react"
 import FeedBackService from '../service/FeedBackService'
+import { Link } from "react-router-dom"
 
 const ITEMS_PER_PAGE = 5
 
@@ -69,16 +70,13 @@ const Commande = () => {
             </div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gestion des Commandes</h1>
           </div>
-          <button
-            onClick={() => {
-              setSelectedCommande(null)
-              setOpenModal(true)
-            }}
+          <Link
+            to='/commande/nouvelle'
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex gap-2 items-center justify-center transition-colors font-medium shadow-lg hover:shadow-xl"
           >
             <PlusCircle size={20} />
             Nouvelle Commande
-          </button>
+          </Link>
         </div>
 
         {/* Toolbar */}

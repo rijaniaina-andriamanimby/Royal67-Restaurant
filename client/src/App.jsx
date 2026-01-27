@@ -6,6 +6,7 @@ import Menu from './pages/Menu'
 import Commande from './pages/Commande'
 import { ThemeProvider } from './context/ThemeContext'
 import Statistique from './pages/Statistique'
+import NouvelleCommande from './components/Commande/NouvelleCommande'
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
             <Route index element={<Statistique/>} />
             <Route path='menu' element={<Menu />} />
             <Route path='commande' element={<Commande />} />
+            <Route path='commande/nouvelle' element={<NouvelleCommande/>}/>
           </Route>
         </Routes>
       </ThemeProvider>
