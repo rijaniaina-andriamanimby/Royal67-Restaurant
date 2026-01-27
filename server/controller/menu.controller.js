@@ -29,12 +29,13 @@ exports.update = async (req, res) => {
     try {
         const id = req.params.id
         const {nom, categorie, prix} = req.body
-        if(nom.trim('') && categorie.trim('') && !isNaN(prix)){
+        if(nom.trim('') && !isNaN(prix)){
             const response = await Menu.update(id, nom, categorie, prix)
             return res.status(200).json(response)
         }
         throw TypeError
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             message: 'Une erreur du serveur est survenu lord de la modification des données !',
             error

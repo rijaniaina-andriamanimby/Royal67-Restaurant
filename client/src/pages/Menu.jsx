@@ -20,6 +20,7 @@ const Menu = () => {
   const [openModal, setOpenModal] = useState(false)
   const [openCategorie, setOpenCategorie] = useState(false)
   const [categories, setCategories] = useState([])
+  const [categorieSelected, setCategorieSelected] = useState('')
 
   const getCategorie = async () => {
     const response = await api.get('/categorie')
@@ -32,11 +33,19 @@ const Menu = () => {
   }, [])
 
   /* 🔍 Recherche */
-  const filtered = menuList.filter((item) => item.nom.toLowerCase().includes(search.toLowerCase()))
+const filtered = menuList.filter((item) => {
+  const matchSearch =
+    !search || item.nom.toLowerCase().includes(search.toLowerCase())
+
+  const matchCategorie =
+    !categorieSelected || item.categorie === Number(categorieSelected)
+
+  return matchSearch && matchCategorie
+})
+
 
   /* 🔃 Tri */
   if (sort === "nom") filtered.sort((a, b) => a.nom.localeCompare(b.nom))
-  if (sort === "categorie") filtered.sort((a, b) => a.categorie.localeCompare(b.categorie))
   if (sort === "prix_asc") filtered.sort((a, b) => a.prix - b.prix)
   if (sort === "prix_desc") filtered.sort((a, b) => b.prix - a.prix)
 
@@ -93,7 +102,9 @@ const Menu = () => {
           search={search} 
           setSearch={setSearch} 
           sort={sort} 
-          setSort={setSort} 
+          setSort={setSort}
+          categories={categories}
+          setCategorie={setCategorieSelected}
         />
 
         {/* Desktop Table */}

@@ -1,6 +1,6 @@
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, Tags } from "lucide-react"
 
-const MenuToolbar = ({ search, setSearch, sort, setSort }) => {
+const MenuToolbar = ({ search, setSearch, sort, setSort, categories, categorie, setCategorie }) => {
   return (
     <div className="flex flex-col md:flex-row gap-3 mb-6">
       <div className="relative flex items-center gap-2 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 w-full md:w-1/3 bg-white dark:bg-slate-700 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
@@ -35,9 +35,24 @@ const MenuToolbar = ({ search, setSearch, sort, setSort }) => {
           <option value="prix_desc" className="bg-white dark:bg-slate-800">
             Prix décroissant
           </option>
-          <option value="categorie" className="bg-white dark:bg-slate-800">
+        </select>
+      </div>
+
+      <div className="relative flex items-center gap-2 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 w-full md:w-1/3 bg-white dark:bg-slate-700">
+        <Tags size={18} className="text-slate-400 dark:text-slate-500" />
+        <select
+          value={categorie}
+          onChange={(e) => setCategorie(e.target.value)}
+          className="w-full focus:outline-none bg-transparent text-slate-900 dark:text-white"
+        >
+          <option value="" className="bg-white dark:bg-slate-800">
             Catégorie
           </option>
+          {
+            categories?.map((item)=>(
+              <option value={item.id} key={item.id} className="bg-white dark:bg-slate-800">{item.nom}</option>
+            ))
+          }
         </select>
       </div>
     </div>

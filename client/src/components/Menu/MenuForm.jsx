@@ -1,6 +1,7 @@
 import { useState } from "react"
 import api from "../../service/api"
 import { Save, X } from "lucide-react"
+import FeedbackService from "../../service/FeedBackService"
 
 const MenuForm = ({ menu, setMenuList, onClose, categorieList }) => {
   const [nom, setNom] = useState(menu?.nom || "")
@@ -13,10 +14,12 @@ const MenuForm = ({ menu, setMenuList, onClose, categorieList }) => {
     if (menu) {
       const res = await api.put(`/menu/${menu.id}`, { nom, categorie, prix })
       setMenuList((prev) => prev.map((item) => (item.id === menu.id ? res.data : item)))
+      FeedbackService.success()
       onClose()
     } else {
       const res = await api.post("/menu", { nom, categorie, prix })
       setMenuList((prev) => [...prev, res.data])
+      FeedbackService.success()
     }
 
   }
