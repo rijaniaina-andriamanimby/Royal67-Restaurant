@@ -1,4 +1,5 @@
 import { CreditCard, Calendar, DollarSign, MoreVertical } from "lucide-react"
+import { espaceChiffre } from "../../service/espaceChiffre"
 
 const PaymentsHistory = ({ data }) => (
   <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm overflow-x-auto">
@@ -23,9 +24,9 @@ const PaymentsHistory = ({ data }) => (
             <td className="py-3 px-4 text-gray-900 font-medium">{p.nomtable}</td>
             <td className="py-3 px-4 text-gray-900 flex items-center gap-1">
               <DollarSign className="w-4 h-4 text-green-600" />
-              {p.payer} Ar
+              {espaceChiffre(p.payer)} Ar
             </td>
-            <td className="py-3 px-4 text-gray-900">{p.rendu} Ar</td>
+            <td className="py-3 px-4 text-gray-900">{espaceChiffre(p.rendu)} Ar</td>
             <td className="py-3 px-4">
               <span
                 className={`px-3 py-1 rounded-full text-xs font-medium ${

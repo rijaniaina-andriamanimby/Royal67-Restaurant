@@ -1,4 +1,5 @@
 import { Edit2, Trash2, UtensilsCrossed } from "lucide-react"
+import { espaceChiffre } from "../../service/espaceChiffre"
 
 const MenuCards = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (
@@ -18,7 +19,7 @@ const MenuCards = ({ menuList, setSelectedMenu, handleDelete }) => {
 
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">Prix</p>
-            <p className="font-bold text-xl text-blue-600 dark:text-blue-400">{item.prix} Ar</p>
+            <p className="font-bold text-xl text-blue-600 dark:text-blue-400">{espaceChiffre(item.prix)} Ar</p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">

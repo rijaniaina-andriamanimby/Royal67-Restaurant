@@ -1,4 +1,5 @@
 import { Edit, Trash } from "lucide-react"
+import { espaceChiffre } from "../../service/espaceChiffre"
 
 const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (
@@ -22,7 +23,7 @@ const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
                   {item.cnom}
                 </span>
               </td>
-              <td className="p-4 text-center text-slate-900 dark:text-white font-semibold">{item.prix} Ar</td>
+              <td className="p-4 text-center text-slate-900 dark:text-white font-semibold">{espaceChiffre(item.prix)} Ar</td>
               <td className="p-4 flex justify-center gap-2">
                 <button
                   onClick={() => setSelectedMenu(item)}

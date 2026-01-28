@@ -1,4 +1,5 @@
 import { Clock, Edit2, Trash2, CreditCard } from "lucide-react"
+import { espaceChiffre } from "../../service/espaceChiffre"
 
 const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
   return (
@@ -49,7 +50,7 @@ const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
                 </div>
               </td>
               <td className="p-4 text-right font-bold text-blue-600 dark:text-blue-400">
-                {cmd.details?.reduce((s, d) => s + (d.prix * d.quantite || 0), 0) || 0} Ar
+                {espaceChiffre(cmd.details?.reduce((s, d) => s + (d.prix * d.quantite || 0), 0) || 0)} Ar
               </td>
               <td className="p-4 text-center">
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">
