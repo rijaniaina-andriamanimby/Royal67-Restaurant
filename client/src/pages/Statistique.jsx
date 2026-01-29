@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import api from "../service/api"
 import StatsCards from "../components/Statistique/StatsCards"
 import TopMenusChart from "../components/Statistique/TopMenusChart"
@@ -14,50 +14,50 @@ const Statistique = () => {
   const [categories, setCategories] = useState([])
   const [payments, setPayments] = useState([])
 
-  const loadStats = async () => {
-    const res = await api.get("/stats")
-    setStats(res.data)
+  const loadStats = useCallback(async () => {
+    try {
+      const now = new Date()
+      let start
 
-    const now = new Date()
-    let start
+      if (filter === "day") {
+        const d = new Date()
+        d.setHours(0, 0, 0, 0)
+        start = d.toISOString().split("T")[0]
+      }
+      if (filter === "week") {
+        const d = new Date()
+        d.setDate(d.getDate() - 7)
+        start = d.toISOString().split("T")[0]
+      }
+      if (filter === "month") {
+        const d = new Date()
+        d.setMonth(d.getMonth() - 1)
+        start = d.toISOString().split("T")[0]
+      }
 
-    if (filter === "day") {
-      const d = new Date()
-      d.setHours(0, 0, 0, 0)
-      start = d.toISOString().split("T")[0]
+      const endDate = new Date()
+      endDate.setHours(23, 59, 59, 999)
+      const end = endDate.toISOString()
+
+      const [resStats, resSales, resCat, resPay] = await Promise.all([
+        api.get("/stats"),
+        api.get(`/stats/period`, { params: { start, end } }),
+        api.get("/stats/category"),
+        api.get("/stats/payments")
+      ])
+
+      setStats(resStats.data)
+      setSales(resSales.data)
+      setCategories(resCat.data)
+      setPayments(resPay.data)
+    } catch (error) {
+      console.error("Erreur lors du chargement des statistiques:", error)
     }
-    if (filter === "week") {
-      const d = new Date()
-      d.setDate(d.getDate() - 7)
-      start = d.toISOString().split("T")[0]
-    }
-    if (filter === "month") {
-      const d = new Date()
-      d.setMonth(d.getMonth() - 1)
-      start = d.toISOString().split("T")[0]
-    }
-
-    const endDate = new Date()
-    endDate.setHours(23, 59, 59, 999)
-
-    const end = endDate.toISOString()
-
-
-    const resSales = await api.get(`/stats/period`, {
-      params: { start, end },
-    })
-
-    const resCat = await api.get("/stats/category")
-    const resPay = await api.get("/stats/payments")
-
-    setSales(resSales.data)
-    setCategories(resCat.data)
-    setPayments(resPay.data)
-  }
+  }, [filter])
 
   useEffect(() => {
     loadStats()
-  }, [filter])
+  }, [loadStats])
 
   if (!stats)
     return (

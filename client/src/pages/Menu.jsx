@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import api from "../service/api"
 import FeedBackService from "../service/FeedBackService"
 import TableMenu from "../components/Menu/TableMenu"
@@ -8,6 +8,7 @@ import Pagination from "../components/Pagination"
 import MenuModal from "../components/Menu/MenuModal"
 import { Plus, PlusCircle, Tags, UtensilsCrossed } from "lucide-react"
 import ModalCategorie from "../components/Categorie/ModalCategorie"
+import { useDebounce } from "../hooks/useDebounce"
 
 const ITEMS_PER_PAGE = 6
 
@@ -22,6 +23,8 @@ const Menu = () => {
   const [categories, setCategories] = useState([])
   const [categorieSelected, setCategorieSelected] = useState('')
 
+  const debouncedSearch = useDebounce(search, 300)
+
   const getCategorie = async () => {
     const response = await api.get('/categorie')
     setCategories(response.data)
@@ -32,27 +35,32 @@ const Menu = () => {
     getCategorie()
   }, [])
 
-  /* 🔍 Recherche */
-const filtered = menuList.filter((item) => {
-  const matchSearch =
-    !search || item.nom.toLowerCase().includes(search.toLowerCase())
+  /* 🔍 Recherche et Tri */
+  const filteredAndSorted = useMemo(() => {
+    let result = menuList.filter((item) => {
+      const matchSearch =
+        !debouncedSearch || item.nom.toLowerCase().includes(debouncedSearch.toLowerCase())
 
-  const matchCategorie =
-    !categorieSelected || item.categorie === Number(categorieSelected)
+      const matchCategorie =
+        !categorieSelected || item.categorie === Number(categorieSelected)
 
-  return matchSearch && matchCategorie
-})
+      return matchSearch && matchCategorie
+    })
 
+    if (sort === "nom") result.sort((a, b) => a.nom.localeCompare(b.nom))
+    if (sort === "prix_asc") result.sort((a, b) => a.prix - b.prix)
+    if (sort === "prix_desc") result.sort((a, b) => b.prix - a.prix)
 
-  /* 🔃 Tri */
-  if (sort === "nom") filtered.sort((a, b) => a.nom.localeCompare(b.nom))
-  if (sort === "prix_asc") filtered.sort((a, b) => a.prix - b.prix)
-  if (sort === "prix_desc") filtered.sort((a, b) => b.prix - a.prix)
+    return result
+  }, [menuList, debouncedSearch, categorieSelected, sort])
 
   /* 📄 Pagination */
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const start = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
+  const totalPages = useMemo(() => Math.ceil(filteredAndSorted.length / ITEMS_PER_PAGE), [filteredAndSorted.length])
+  
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredAndSorted.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredAndSorted, currentPage])
 
   const handleDelete = async (id) => {
     const confirm = await FeedBackService.confirm()

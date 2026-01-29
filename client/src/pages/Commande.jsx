@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import api from "../service/api"
 import { groupCommande } from "../utils/groupCommande"
 import CommandeToolbar from "../components/Commande/CommandeToolbar"
@@ -9,6 +9,7 @@ import CommandeModal from "../components/Commande/CommandeModal"
 import { Plus, PlusCircle, ShoppingCart } from "lucide-react"
 import FeedBackService from '../service/FeedBackService'
 import { Link } from "react-router-dom"
+import { useDebounce } from "../hooks/useDebounce"
 
 const ITEMS_PER_PAGE = 5
 
@@ -21,6 +22,8 @@ const Commande = () => {
   const [openModal, setOpenModal] = useState(false)
   const [categorieList, setCategorieList] = useState([])
 
+  const debouncedSearch = useDebounce(search, 300)
+
   useEffect(() => {
     api.get("/commande").then((res) => {
       setCommandes(groupCommande(res.data))
@@ -30,20 +33,32 @@ const Commande = () => {
     })
   }, [])
 
-  const filtered = commandes.filter((c) => c.nomTable.toLowerCase().includes(search.toLowerCase()))
+  /* 🔍 Recherche et Tri */
+  const filteredAndSorted = useMemo(() => {
+    let result = commandes.filter((c) => 
+      c.nomTable.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
 
-  if (sort === "date_desc") filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
-  if (sort === "date_asc") filtered.sort((a, b) => new Date(a.date) - new Date(b.date))
-  if (sort === "total_desc")
-    filtered.sort((a, b) => {
-      const totalA = a.details.reduce((s, d) => s + d.prix * d.quantite, 0)
-      const totalB = b.details.reduce((s, d) => s + d.prix * d.quantite, 0)
-      return totalB - totalA
-    })
+    if (sort === "date_desc") result.sort((a, b) => new Date(b.date) - new Date(a.date))
+    if (sort === "date_asc") result.sort((a, b) => new Date(a.date) - new Date(b.date))
+    if (sort === "total_desc") {
+      result.sort((a, b) => {
+        const totalA = a.details.reduce((s, d) => s + d.prix * d.quantite, 0)
+        const totalB = b.details.reduce((s, d) => s + d.prix * d.quantite, 0)
+        return totalB - totalA
+      })
+    }
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const start = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
+    return result
+  }, [commandes, debouncedSearch, sort])
+
+  /* 📄 Pagination */
+  const totalPages = useMemo(() => Math.ceil(filteredAndSorted.length / ITEMS_PER_PAGE), [filteredAndSorted.length])
+  
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredAndSorted.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredAndSorted, currentPage])
 
   const handleDelete = async (id) => {
     const result = await FeedBackService.confirm()
