@@ -1,3 +1,7 @@
-export function espaceChiffre(nombre) {
-    return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+const espaceChiffre = (nombre) => {
+    const valeur = Number(nombre ?? 0)
+
+    return valeur.toLocaleString("fr-FR")
 }
+
+export default espaceChiffre
