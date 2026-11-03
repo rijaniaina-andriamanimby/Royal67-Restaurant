@@ -1,6 +1,6 @@
 import { TrendingUp, ShoppingCart, DollarSign } from "lucide-react"
 import {FaMoneyBillWave} from 'react-icons/fa'
-import { espaceChiffre } from "../../service/espaceChiffre"
+import espaceChiffre from "../../service/espaceChiffre"
 
 const Card = ({ label, value, icon: Icon, trend }) => (
   <div className="bg-linear-to-br from-blue-50 to-white border border-blue-100 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">

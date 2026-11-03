@@ -1,5 +1,5 @@
 import { CreditCard, Calendar, DollarSign, MoreVertical } from "lucide-react"
-import { espaceChiffre } from "../../service/espaceChiffre"
+import espaceChiffre from "../../service/espaceChiffre"
 
 const PaymentsHistory = ({ data }) => (
   <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm overflow-x-auto">

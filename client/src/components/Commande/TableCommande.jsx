@@ -1,5 +1,5 @@
 import { Clock, Edit2, Trash2, CreditCard } from "lucide-react"
-import { espaceChiffre } from "../../service/espaceChiffre"
+import espaceChiffre from "../../service/espaceChiffre"
 
 const TableCommande = ({ commandes, setSelectedCommande, handleDelete }) => {
   return (

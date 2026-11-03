@@ -1,5 +1,5 @@
 import { Edit, Trash } from "lucide-react"
-import { espaceChiffre } from "../../service/espaceChiffre"
+import espaceChiffre from "../../service/espaceChiffre"
 
 const TableMenu = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (

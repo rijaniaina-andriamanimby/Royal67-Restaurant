@@ -1,5 +1,5 @@
 import { Edit2, Trash2, UtensilsCrossed } from "lucide-react"
-import { espaceChiffre } from "../../service/espaceChiffre"
+import espaceChiffre from "../../service/espaceChiffre"
 
 const MenuCards = ({ menuList, setSelectedMenu, handleDelete }) => {
   return (
