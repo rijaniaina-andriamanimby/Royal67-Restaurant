@@ -1,0 +1,81 @@
+
+services:
+
+  # -------------------------
+  # PostgreSQL
+  # -------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: royal67-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  # -------------------------
+  # Backend Express
+  # -------------------------
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    container_name: royal67-backend
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      PORT: 8000
+      API: http://localhost:5173
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+  # -------------------------
+  # Frontend React
+  # -------------------------
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+
+    container_name: royal67-frontend
+    restart: unless-stopped
+
+    environment:
+      VITE_API_URL: http://localhost:8000/
+
+    ports:
+      - "5173:5173"
+
+    depends_on:
+      - backend
+
+
+volumes:
+  postgres_data:
