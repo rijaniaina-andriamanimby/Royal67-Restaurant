@@ -1,0 +1,100 @@
+{
+  "project": "Royal67 Restaurant",
+  "scan_metadata": [
+    {
+      "scanner": "semgrep",
+      "source_file": "..\\..\\reports\\local-baseline\\semgrep\\semgrep-report.json",
+      "version": "1.182.1",
+      "findings_reported": 1,
+      "errors_count": 0,
+      "errors": [],
+      "scanned_targets_count": 73,
+      "scan_time_seconds": null
+    },
+    {
+      "scanner": "trivy",
+      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-fs-report.json",
+      "version": "0.69.3",
+      "artifact": ".",
+      "artifact_type": "repository",
+      "scope": "filesystem",
+      "created_at": "2026-11-04T11:32:42.527029224Z",
+      "commit": "887cf9074971eabd0ba5dd8cf635637dc5a354ab",
+      "branch": "devsecops/docker-ci",
+      "findings_reported": 84,
+      "results_count": 4
+    },
+    {
+      "scanner": "trivy",
+      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-backend-image-report.json",
+      "version": "0.69.3",
+      "artifact": "restaurant-backend:ci",
+      "artifact_type": "container_image",
+      "scope": "image",
+      "created_at": "2026-11-04T11:33:45.992486079Z",
+      "commit": null,
+      "branch": null,
+      "findings_reported": 35,
+      "results_count": 3
+    },
+    {
+      "scanner": "trivy",
+      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-frontend-image-report.json",
+      "version": "0.69.3",
+      "artifact": "restaurant-frontend:ci",
+      "artifact_type": "container_image",
+      "scope": "image",
+      "created_at": "2026-11-04T11:34:09.971234415Z",
+      "commit": null,
+      "branch": null,
+      "findings_reported": 1316,
+      "results_count": 16
+    }
+  ],
+  "raw": {
+    "observations": 1436,
+    "by_scanner": {
+      "trivy": 1435,
+      "semgrep": 1
+    },
+    "by_type": {
+      "vulnerability": 1431,
+      "misconfiguration": 4,
+      "sast": 1
+    },
+    "by_severity": {
+      "MEDIUM": 760,
+      "HIGH": 549,
+      "LOW": 88,
+      "UNKNOWN": 21,
+      "CRITICAL": 17,
+      "INFO": 1
+    }
+  },
+  "deduplicated": {
+    "observations": 483,
+    "by_scanner": {
+      "trivy": 482,
+      "semgrep": 1
+    },
+    "by_type": {
+      "vulnerability": 478,
+      "misconfiguration": 4,
+      "sast": 1
+    },
+    "by_severity": {
+      "MEDIUM": 230,
+      "HIGH": 208,
+      "LOW": 35,
+      "CRITICAL": 6,
+      "UNKNOWN": 3,
+      "INFO": 1
+    }
+  },
+  "ground_truth_metrics": {
+    "available": false,
+    "reason": "Ground truth indépendante absente ou vide. Precision, recall et F1 non calculés.",
+    "by_scanner": []
+  },
+  "methodology_note": "Les observations brutes sont conservées. La déduplication regroupe les observations d'une même vulnérabilité/package/version dans une image, même si plusieurs binaires ou cibles la signalent. Les métriques de classification exigent une ground truth indépendante et exhaustive pour le périmètre déclaré."
+}
