@@ -7,10 +7,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copier le code React
-COPY . .
+# Copier le code React avec les permissions du nouvel utilisateur
+COPY --chown=node:node . .
+
+# Donner la propriété du répertoire de travail à node
+RUN chown -R node:node /app
 
 EXPOSE 5173
 
-# Démarrer Vite et rendre le serveur accessible depuis l'extérieur
+# Exécuter Vite sans privilèges root
+USER node
+
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
