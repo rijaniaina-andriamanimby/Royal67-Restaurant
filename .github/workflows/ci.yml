@@ -63,3 +63,34 @@ jobs:
       - name: Build frontend
         working-directory: client
         run: npm run build
+
+  security-sast:
+    name: Security - Semgrep SAST
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run Semgrep
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            semgrep/semgrep:1.182.1 \
+            semgrep scan \
+            --config p/default \
+            --json \
+            --output semgrep-report.json \
+            --exclude node_modules \
+            --exclude dist \
+            server client
+
+      - name: Upload Semgrep report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sast-report
+          path: semgrep-report.json
+          if-no-files-found: warn
+          retention-days: 30
