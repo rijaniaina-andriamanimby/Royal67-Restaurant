@@ -23,8 +23,12 @@ if not csv_path.exists():
     st.error(f"Fichier manquant : {csv_path}")
     st.stop()
 
-df = pd.read_csv(csv_path).fillna("")
-dedup = pd.read_csv(dedup_path).fillna("") if dedup_path.exists() else df.copy()
+df = pd.read_csv(csv_path, dtype=str, keep_default_na=False)
+dedup = (
+    pd.read_csv(dedup_path, dtype=str, keep_default_na=False)
+    if dedup_path.exists()
+    else df.copy()
+)
 
 raw = summary.get("raw", {})
 cols = st.columns(4)
@@ -51,7 +55,7 @@ with right:
 st.subheader("Résultats par cible")
 if not df.empty:
     grouped = df.groupby(["scanner", "scope", "target", "finding_type", "severity"]).size().reset_index(name="observations")
-    st.dataframe(grouped, use_container_width=True, hide_index=True)
+    st.dataframe(grouped, width="stretch", hide_index=True)
 
 st.subheader("Métriques expérimentales")
 metrics = summary.get("ground_truth_metrics", {})
@@ -62,13 +66,13 @@ else:
     if metric_df.empty:
         st.info("Aucune ligne de référence exploitable.")
     else:
-        st.dataframe(metric_df, use_container_width=True, hide_index=True)
+        st.dataframe(metric_df, width="stretch", hide_index=True)
 
 st.subheader("Observations normalisées")
 scanner_options = sorted(df["scanner"].unique().tolist()) if not df.empty else []
 selected = st.multiselect("Filtrer par scanner", scanner_options, default=scanner_options)
 view = df[df["scanner"].isin(selected)] if selected else df.iloc[0:0]
-st.dataframe(view, use_container_width=True, hide_index=True)
+st.dataframe(view, width="stretch", hide_index=True)
 
 st.download_button(
     "Télécharger les observations CSV",

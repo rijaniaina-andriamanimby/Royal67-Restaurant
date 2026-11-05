@@ -1,0 +1,165 @@
+﻿finding_id,package,installed_version,detections,scopes,artifacts,targets
+CVE-2024-34156,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2025-61726,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2025-61726,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2025-61729,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2025-61729,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-101898,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-101901,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-102276,brace-expansion,1.1.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-102276,brace-expansion,2.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-102278,brace-expansion,1.1.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-102278,brace-expansion,2.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-102673,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-102674,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-102675,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-102676,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-111181,body-parser,2.2.0,2,filesystem; image,.; restaurant-backend:ci,Node.js; server/package-lock.json
+CVE-2026-111943,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-111943,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-112942,vite,7.1.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-115570,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-118772,joi,18.0.2,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-12143,form-data,4.0.5,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-13149,brace-expansion,1.1.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-13149,brace-expansion,2.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-13311,shell-quote,1.8.3,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-14257,brace-expansion,1.1.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-14257,brace-expansion,2.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-19693,extract-zip,2.0.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-21884,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-22029,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-23745,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-23950,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-24842,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-25547,@isaacs/brace-expansion,5.0.0,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-25639,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-25679,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-25679,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-26960,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-26996,minimatch,10.1.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-26996,minimatch,3.1.2,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-26996,minimatch,5.1.6,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-26996,minimatch,9.0.5,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27145,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-27145,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-27606,rollup,4.52.5,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-27903,minimatch,10.1.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27903,minimatch,3.1.2,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27903,minimatch,5.1.6,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27903,minimatch,9.0.5,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27904,minimatch,10.1.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27904,minimatch,3.1.2,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27904,minimatch,5.1.6,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-27904,minimatch,9.0.5,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-29786,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-31802,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-32141,flatted,3.3.3,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-32280,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-32280,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-32281,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-32281,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-32283,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-32283,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-33228,flatted,3.3.3,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-33245,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-33671,picomatch,4.0.3,3,filesystem; image,.; restaurant-backend:ci; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-33811,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-33811,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-33814,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-33814,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-33818,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-33818,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-34077,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-34601,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-34769,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-34770,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-34771,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-34774,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-34780,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-39363,vite,7.1.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-39364,vite,7.1.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-39820,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-39820,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-39821,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-39821,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-39822,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-39822,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-39836,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-39836,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-41672,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-41673,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-41674,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-41675,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-42033,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42035,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42043,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42211,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42264,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42342,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-42499,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-42499,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-42504,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-42504,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-44486,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44487,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44488,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44494,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44495,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44496,axios,1.13.2,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-44705,tmp,0.2.5,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-45623,postcss,8.5.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-46602,golang.org/x/image,v0.12.0,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-46603,golang.org/x/image,v0.12.0,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-4800,lodash,4.17.21,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-48815,sigstore,3.1.0,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-4926,path-to-regexp,8.3.0,2,filesystem; image,.; restaurant-backend:ci,Node.js; server/package-lock.json
+CVE-2026-54672,app-builder-lib,26.0.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-54673,builder-util-runtime,9.3.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-55685,react-router,7.9.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-56853,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-56853,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-56858,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-56858,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-56859,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-56859,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-56860,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-56860,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-56862,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-56862,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-56876,extract-zip,2.0.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-59869,js-yaml,4.1.0,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-59874,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-67213,nanoid,3.3.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-67214,nanoid,3.3.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-69152,brace-expansion,1.1.12,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-69152,brace-expansion,2.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-69192,ip-address,10.1.0,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-70601,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-70604,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-70608,electron,39.2.7,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-73086,nanoid,3.3.11,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-73088,browserslist,4.26.3,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-73089,browserslist,4.26.3,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-73566,tar,6.2.1,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-73646,postcss,8.5.6,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-78667,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-78667,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-78669,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-78669,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+CVE-2026-83605,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83607,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83608,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83613,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83614,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83615,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83616,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-83619,@xmldom/xmldom,0.8.11,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-84375,js-yaml,4.1.0,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-92599,joi,18.0.2,1,image,restaurant-frontend:ci,Node.js
+CVE-2026-93749,source-map-js,1.2.1,2,filesystem; image,.; restaurant-frontend:ci,Node.js; client/package-lock.json
+CVE-2026-9496,pacote,19.0.2,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-9496,pacote,20.0.1,2,image,restaurant-backend:ci; restaurant-frontend:ci,Node.js
+CVE-2026-97031,stdlib,v1.21.13,1,image,restaurant-frontend:ci,app/node_modules/app-builder-bin/linux/arm/app-builder
+CVE-2026-97031,stdlib,v1.23.12,1,image,restaurant-frontend:ci,app/node_modules/@esbuild/linux-x64/bin/esbuild
+GHSA-5p4m-2wfm-xmqj,js-yaml,4.1.0,1,image,restaurant-frontend:ci,Node.js

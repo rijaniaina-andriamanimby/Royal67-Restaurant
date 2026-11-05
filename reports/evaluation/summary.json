@@ -93,7 +93,7 @@
   },
   "ground_truth_metrics": {
     "available": false,
-    "reason": "Ground truth indépendante absente ou vide. Precision, recall et F1 non calculés.",
+    "reason": "Ground truth indépendante absente ou vide.",
     "by_scanner": []
   },
   "methodology_note": "Les observations brutes sont conservées. La déduplication regroupe les observations d'une même vulnérabilité/package/version dans une image, même si plusieurs binaires ou cibles la signalent. Les métriques de classification exigent une ground truth indépendante et exhaustive pour le périmètre déclaré."
