@@ -3,14 +3,16 @@ name: Royal67 Cloud CD
 on:
   workflow_call:
     secrets:
+      # Optional at call time: the deploy job can also load these
+      # from its "production" GitHub Environment.
       RENDER_DEPLOY_HOOK_URL:
-        required: true
+        required: false
       VERCEL_TOKEN:
-        required: true
+        required: false
       VERCEL_ORG_ID:
-        required: true
+        required: false
       VERCEL_PROJECT_ID:
-        required: true
+        required: false
 permissions:
   contents: read
 
@@ -24,6 +26,27 @@ jobs:
     runs-on: ubuntu-24.04
     environment: production
     steps:
+      - name: Validate deployment secrets
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          missing=()
+          for secret_name in RENDER_DEPLOY_HOOK_URL VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!secret_name}" ]; then
+              missing+=("$secret_name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Secrets manquants dans Repository secrets ou dans l'environnement production : ${missing[*]}"
+            exit 1
+          fi
+
+          echo "Les quatre secrets de déploiement sont disponibles."
+
       - name: Checkout the exact commit validated by CI
         uses: actions/checkout@v7
         with:
