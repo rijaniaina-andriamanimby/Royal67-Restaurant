@@ -3,7 +3,7 @@
   "scan_metadata": [
     {
       "scanner": "semgrep",
-      "source_file": "..\\..\\reports\\local-baseline\\semgrep\\semgrep-report.json",
+      "source_file": "reports\\local-baseline\\semgrep\\semgrep-report.json",
       "version": "1.182.1",
       "findings_reported": 1,
       "errors_count": 0,
@@ -13,7 +13,7 @@
     },
     {
       "scanner": "trivy",
-      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-fs-report.json",
+      "source_file": "reports\\local-baseline\\trivy\\trivy-fs-report.json",
       "version": "0.69.3",
       "artifact": ".",
       "artifact_type": "repository",
@@ -26,7 +26,7 @@
     },
     {
       "scanner": "trivy",
-      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-backend-image-report.json",
+      "source_file": "reports\\local-baseline\\trivy\\trivy-backend-image-report.json",
       "version": "0.69.3",
       "artifact": "restaurant-backend:ci",
       "artifact_type": "container_image",
@@ -39,7 +39,7 @@
     },
     {
       "scanner": "trivy",
-      "source_file": "..\\..\\reports\\local-baseline\\trivy\\trivy-frontend-image-report.json",
+      "source_file": "reports\\local-baseline\\trivy\\trivy-frontend-image-report.json",
       "version": "0.69.3",
       "artifact": "restaurant-frontend:ci",
       "artifact_type": "container_image",
@@ -92,9 +92,28 @@
     }
   },
   "ground_truth_metrics": {
-    "available": false,
-    "reason": "Ground truth indépendante absente ou vide.",
-    "by_scanner": []
+    "available": true,
+    "complete": false,
+    "reason": "Résultats partiels : les détections non examinées ne sont pas classées FP et le Recall/F1 global est désactivé.",
+    "by_scanner": [
+      {
+        "scanner": "trivy",
+        "finding_type": "vulnerability",
+        "tp": 6,
+        "fp": 0,
+        "fn": 0,
+        "precision_reviewed_sample": null,
+        "recall": null,
+        "f1": null,
+        "reviewed_positive": 6,
+        "reviewed_negative": 0,
+        "matched_positive": 6,
+        "matched_negative": 0,
+        "unreviewed_gt": 0,
+        "detections_total": 478,
+        "ground_truth_complete": false
+      }
+    ]
   },
   "methodology_note": "Les observations brutes sont conservées. La déduplication regroupe les observations d'une même vulnérabilité/package/version dans une image, même si plusieurs binaires ou cibles la signalent. Les métriques de classification exigent une ground truth indépendante et exhaustive pour le périmètre déclaré."
 }

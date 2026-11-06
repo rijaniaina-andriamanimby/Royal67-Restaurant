@@ -383,6 +383,12 @@ with tab_gt:
             "Observations candidates",
         )
 
+    if not gt.empty and "verification_status" in gt.columns:
+        st.subheader("État de validation du référentiel")
+        status_counts = count_values(gt, "verification_status")
+        st.dataframe(status_counts.rename("Nombre").rename_axis("Statut").reset_index(), width="stretch", hide_index=True)
+        st.caption("Une entrée REVIEW_REQUIRED n'est jamais utilisée pour calculer TP/FP/FN.")
+
     # --------------------------------------------------------
     # Répartition des décisions
     # --------------------------------------------------------
@@ -406,7 +412,7 @@ with tab_gt:
                 decisions.rename("Nombre").rename_axis(
     "Décision"
 ).reset_index(),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
@@ -722,50 +728,24 @@ with tab_findings:
     st.subheader("Métriques expérimentales")
 
     if not metrics.get("available"):
-
-        st.warning(
-            metrics.get(
-                "reason",
-                "Ground Truth indépendante requise.",
-            )
-        )
-
+        st.warning(metrics.get("reason", "Aucune entrée Ground Truth vérifiée."))
     else:
-
-        metric_df = pd.DataFrame(
-            metrics.get("by_scanner", [])
-        )
-
+        if not metrics.get("complete"):
+            st.warning(
+                "Évaluation partielle : les détections non examinées ne sont pas classées FP. "
+                "Le Recall et le F1 globaux restent désactivés tant que l'exhaustivité du périmètre n'est pas démontrée."
+            )
+        metric_df = pd.DataFrame(metrics.get("by_scanner", []))
         if metric_df.empty:
-            st.info(
-                "Aucune métrique exploitable."
-            )
-
+            st.info("Aucune métrique exploitable.")
         else:
-
-            st.dataframe(
-                metric_df,
-                use_container_width=True,
-                hide_index=True,
-            )
-
-            if {
-                "scanner",
-                "precision",
-                "recall",
-                "f1",
-            }.issubset(metric_df.columns):
-
-                chart_df = metric_df.set_index(
-                    "scanner"
-                )[
-                    ["precision", "recall", "f1"]
-                ]
-
-                st.subheader(
-                    "Comparaison des performances"
-                )
-
+            st.dataframe(metric_df, width="stretch", hide_index=True)
+            chart_columns = ["precision_reviewed_sample"]
+            if metrics.get("complete"):
+                chart_columns.extend(["recall", "f1"])
+            chart_df = metric_df.set_index("scanner")[chart_columns].dropna(how="all")
+            if not chart_df.empty:
+                st.subheader("Mesures sur les références examinées")
                 st.bar_chart(chart_df)
 
     # --------------------------------------------------------

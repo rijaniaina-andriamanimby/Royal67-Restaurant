@@ -85,10 +85,16 @@ const CommandeForm = ({ onClose, setCommandes, categorieList }) => {
       />
     ).toBlob();
 
-    const arrayBuffer = await blob.arrayBuffer();
-    const uint8 = new Uint8Array(arrayBuffer);
-
-    await window.electronAPI.printPdf(uint8);
+    // Application web : télécharger le reçu PDF directement depuis le navigateur.
+    // Aucun pont Electron / preload n'est nécessaire.
+    const pdfUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = pdfUrl;
+    downloadLink.download = `recu_${response.data.idCommande}.pdf`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
     onClose()
   }

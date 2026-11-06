@@ -40,6 +40,7 @@ def main():
     parser.add_argument("--semgrep", action="append", default=[], help="Chemin d'un rapport JSON Semgrep (répétable)")
     parser.add_argument("--trivy", action="append", default=[], help="Chemin d'un rapport JSON Trivy (répétable)")
     parser.add_argument("--ground-truth", default=None, help="CSV de référence indépendante")
+    parser.add_argument("--ground-truth-complete", action="store_true", help="Déclare la Ground Truth exhaustive pour le périmètre évalué (à utiliser uniquement après revue indépendante complète).")
     parser.add_argument("--output-dir", default="reports/evaluation", help="Dossier de sortie")
     args = parser.parse_args()
 
@@ -59,7 +60,7 @@ def main():
     frame = to_dataframe(findings)
     dedup_frame = deduplicate(frame)
     gt = load_ground_truth(args.ground_truth) if args.ground_truth else None
-    metrics = calculate_metrics(dedup_frame, gt)
+    metrics = calculate_metrics(dedup_frame, gt, ground_truth_complete=args.ground_truth_complete)
 
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -73,7 +74,9 @@ def main():
     print(json.dumps(summary["raw"], indent=2, ensure_ascii=False))
     print(f"\nRapports générés dans : {output.resolve()}")
     if not metrics["available"]:
-        print("Precision / Recall / F1 : indisponibles (ground truth indépendante non fournie).")
+        print("Métriques indisponibles : aucune entrée Ground Truth vérifiée.")
+    elif not metrics["complete"]:
+        print("Évaluation partielle : Recall/F1 globaux désactivés ; les détections non examinées ne sont pas comptées comme FP.")
 
 
 if __name__ == "__main__":

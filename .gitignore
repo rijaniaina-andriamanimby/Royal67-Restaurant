@@ -8,3 +8,6 @@ coverage/
 
 .DS_Store
 Thumbs.db
+.last-good-image-tag
+.env.production
+reports/**/high-review-osv-enriched.csv

@@ -62,7 +62,7 @@ services:
   frontend:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
 
     container_name: royal67-frontend
     restart: unless-stopped

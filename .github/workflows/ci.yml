@@ -1,91 +1,68 @@
-
-name: Royal67 CI
+name: Royal67 DevSecOps CI/CD
 
 on:
   push:
-    branches:
-      - main
-      - devsecops/docker-ci
-
+    branches: [main, devsecops/docker-ci]
   pull_request:
-    branches:
-      - main
-      - devsecops/docker-ci
-
+    branches: [main, devsecops/docker-ci]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: royal67-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-tests:
-    name: Backend - Jest Tests
+    name: Backend - Jest
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: server/package-lock.json
-
-      - name: Install backend dependencies
+      - name: Install dependencies
         working-directory: server
         run: npm ci
-
-      - name: Run Jest tests
+      - name: Run tests
         working-directory: server
         run: npm test -- --runInBand
 
   frontend-build:
-    name: Frontend - Vite Build
+    name: Frontend - production build
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
-
-      - name: Install frontend dependencies
+      - name: Install dependencies
         working-directory: client
         run: npm ci
-
-      - name: Build frontend
+      - name: Build React
         working-directory: client
         run: npm run build
 
   security-sast:
     name: Security - Semgrep SAST
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
+      - uses: actions/checkout@v7
       - name: Run Semgrep
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/src" \
             -w /src \
             semgrep/semgrep:1.182.1 \
-            semgrep scan \
-            --config p/default \
-            --json \
+            semgrep scan --config p/default --json \
             --output semgrep-report.json \
-            --exclude node_modules \
-            --exclude dist \
-            server client
-
+            --exclude node_modules --exclude dist server client
       - name: Upload Semgrep report
         if: always()
         uses: actions/upload-artifact@v7
@@ -96,83 +73,138 @@ jobs:
           retention-days: 30
 
   security-trivy:
-    name: Security - Trivy Scan
+    name: Security - Trivy filesystem and production images
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      # 1. Analyse des fichiers du projet
-      - name: Trivy - Filesystem Scan
+      - uses: actions/checkout@v7
+      - name: Trivy filesystem scan
         run: |
           mkdir -p reports
-
-          docker run --rm \
-            -v "${{ github.workspace }}:/src" \
-            -w /src \
-            aquasec/trivy:0.69.3 \
-            fs \
-            --scanners vuln,misconfig,secret \
-            --timeout 20m \
-            --skip-dirs node_modules \
-            --skip-dirs dist \
-            --format json \
-            --output /src/reports/trivy-fs-report.json \
-            .
-
-      # 2. Construction de l'image backend
-      - name: Build Backend Docker Image
+          docker run --rm -v "${{ github.workspace }}:/src" -w /src \
+            aquasec/trivy:0.69.3 fs \
+            --scanners vuln,misconfig,secret --timeout 20m \
+            --skip-dirs node_modules --skip-dirs dist \
+            --format json --output /src/reports/trivy-fs-report.json .
+      - name: Build production backend image
+        run: docker build -t royal67-backend:ci ./server
+      - name: Build production frontend image
+        run: docker build --build-arg VITE_API_URL=/ -t royal67-frontend:ci ./client
+      - name: Trivy backend image scan
         run: |
-          docker build \
-            -t restaurant-backend:ci \
-            ./server
-
-      # 3. Construction de l'image frontend
-      - name: Build Frontend Docker Image
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${{ github.workspace }}:/src" -v trivy-cache:/root/.cache/ -w /src \
+            aquasec/trivy:0.69.3 image --scanners vuln,misconfig,secret --timeout 20m \
+            --format json --output /src/reports/trivy-backend-image-report.json royal67-backend:ci
+      - name: Trivy frontend image scan
         run: |
-          docker build \
-            -t restaurant-frontend:ci \
-            ./client
-
-      # 4. Analyse de l'image backend
-      - name: Trivy - Backend Image Scan
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}:/src" \
-            -v trivy-cache:/root/.cache/ \
-            -w /src \
-            aquasec/trivy:0.69.3 \
-            image \
-            --scanners vuln,misconfig,secret \
-            --timeout 20m \
-            --format json \
-            --output /src/reports/trivy-backend-image-report.json \
-            restaurant-backend:ci
-
-      # 5. Analyse de l'image frontend
-      - name: Trivy - Frontend Image Scan
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}:/src" \
-            -v trivy-cache:/root/.cache/ \
-            -w /src \
-            aquasec/trivy:0.69.3 \
-            image \
-            --scanners vuln,misconfig,secret \
-            --timeout 20m \
-            --format json \
-            --output /src/reports/trivy-frontend-image-report.json \
-            restaurant-frontend:ci
-
-      # 6. Publication des rapports
-      - name: Upload Trivy Reports
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${{ github.workspace }}:/src" -v trivy-cache:/root/.cache/ -w /src \
+            aquasec/trivy:0.69.3 image --scanners vuln,misconfig,secret --timeout 20m \
+            --format json --output /src/reports/trivy-frontend-image-report.json royal67-frontend:ci
+      - name: Upload Trivy reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: trivy-security-reports
+          name: trivy-security-reports-production
           path: reports/
           if-no-files-found: warn
           retention-days: 30
+
+  publish-images:
+    name: Build and publish images to GHCR
+    needs: [backend-tests, frontend-build, security-sast, security-trivy]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+      image_prefix: ${{ steps.vars.outputs.image_prefix }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Define immutable image tags
+        id: vars
+        shell: bash
+        run: |
+          REPOSITORY="${GITHUB_REPOSITORY,,}"
+          echo "image_prefix=ghcr.io/${REPOSITORY}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Publish backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image_prefix }}-backend:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.vars.outputs.image_prefix }}-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Publish frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./client
+          push: true
+          build-args: |
+            VITE_API_URL=/
+          tags: |
+            ${{ steps.vars.outputs.image_prefix }}-frontend:${{ steps.vars.outputs.image_tag }}
+            ${{ steps.vars.outputs.image_prefix }}-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    name: Deploy to Windows Docker Desktop server
+    needs: publish-images
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devsecops/docker-ci')
+    runs-on: [self-hosted, windows, royal67-deploy]
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Login to GHCR on deployment host
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Prepare persistent deployment directory
+        shell: pwsh
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          IMAGE_PREFIX: ${{ needs.publish-images.outputs.image_prefix }}
+          PUBLIC_ORIGIN: ${{ secrets.PUBLIC_ORIGIN }}
+        run: |
+          $deployDir = 'C:\royal67-deploy'
+          New-Item -ItemType Directory -Force -Path $deployDir | Out-Null
+          Copy-Item -Force 'docker-compose.prod.yml' (Join-Path $deployDir 'docker-compose.prod.yml')
+          if (Test-Path (Join-Path $deployDir 'database')) { Remove-Item -Recurse -Force (Join-Path $deployDir 'database') }
+          Copy-Item -Recurse -Force 'database' (Join-Path $deployDir 'database')
+          @(
+            "DB_NAME=$env:DB_NAME",
+            "DB_USER=$env:DB_USER",
+            "DB_PASSWORD=$env:DB_PASSWORD",
+            "IMAGE_PREFIX=$env:IMAGE_PREFIX",
+            "PUBLIC_ORIGIN=$(if ($env:PUBLIC_ORIGIN) { $env:PUBLIC_ORIGIN } else { 'http://localhost:8080' })",
+            'WEB_PORT=8080'
+          ) | Set-Content -Path (Join-Path $deployDir '.env') -Encoding ascii
+          Copy-Item -Force 'scripts/deploy-production.ps1' (Join-Path $deployDir 'deploy-production.ps1')
+      - name: Deploy immutable image version with health check and rollback
+        shell: pwsh
+        env:
+          IMAGE_TAG: ${{ needs.publish-images.outputs.image_tag }}
+        run: |
+          Set-Location 'C:\royal67-deploy'
+          .\deploy-production.ps1 -ImageTag $env:IMAGE_TAG

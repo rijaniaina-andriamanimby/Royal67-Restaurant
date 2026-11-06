@@ -2,10 +2,21 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 require('dotenv').config()
+const db = require('./db/db')
 app.use(express.json())
 app.use(cors({
     origin: process.env.API
 }))
+
+// Readiness endpoint: confirms that Express can reach PostgreSQL.
+app.get('/health', async (_req, res) => {
+    try {
+        await db.query('SELECT 1')
+        res.status(200).json({ status: 'ok', database: 'connected' })
+    } catch (_error) {
+        res.status(503).json({ status: 'error', database: 'unavailable' })
+    }
+})
 //------------------------
 // Router
 //------------------------
