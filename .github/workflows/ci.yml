@@ -96,6 +96,16 @@ jobs:
               --exclude dist \
               server client
 
+      # Docker containers commonly write mounted files as root.
+      # Restore ownership to the GitHub runner before Python edits the JSON.
+      - name: Fix Semgrep report permissions
+        if: always()
+        run: |
+          if [ -d reports/scans ]; then
+            sudo chown -R "$(id -u):$(id -g)" reports/scans
+            sudo chmod -R u+rwX reports/scans
+          fi
+
       - name: Redact sensitive source snippets from Semgrep JSON
         if: always()
         run: |
@@ -184,6 +194,16 @@ jobs:
               --format json \
               --output /src/reports/scans/trivy-frontend-image-report.json \
               royal67-frontend:ci
+
+      # Trivy runs inside Docker as root and creates root-owned JSON files.
+      # Restore ownership before the sanitization script writes them.
+      - name: Fix Trivy report permissions
+        if: always()
+        run: |
+          if [ -d reports/scans ]; then
+            sudo chown -R "$(id -u):$(id -g)" reports/scans
+            sudo chmod -R u+rwX reports/scans
+          fi
 
       - name: Redact secret values from Trivy JSON reports
         if: always()
