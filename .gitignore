@@ -11,3 +11,12 @@ Thumbs.db
 .last-good-image-tag
 .env.production
 reports/**/high-review-osv-enriched.csv
+# Local tooling and CI-generated temporary files
+.vercel/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.streamlit/secrets.toml
+reports/scans/

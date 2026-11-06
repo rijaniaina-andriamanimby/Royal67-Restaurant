@@ -30,7 +30,20 @@ Sous PowerShell, `PYTHONPATH` peut être défini ainsi : `$env:PYTHONPATH="devse
 - `normalized_findings.csv` : observations normalisées.
 - `deduplicated_findings.csv` : observations regroupées selon les clés de déduplication.
 - `severity_summary.csv` : répartition par scanner/type/sévérité.
-- `summary.json` : volumes, métadonnées et métriques évaluables.
+- `summary.json` : volumes, métadonnées d'exécution (commit/branche) et métriques évaluables.
+
+## CI GitHub Actions
+
+Le workflow `ci.yml` produit les rapports Semgrep et Trivy de l'exécution courante, les nettoie des extraits de code ou valeurs de secrets, puis lance cet évaluateur. Les rapports historiques `reports/local-baseline/` ne sont pas utilisés par le CI.
+
+Pour installer aussi les outils de test :
+
+```bash
+python -m pip install -r devsecops/requirements-ci.txt
+PYTHONPATH=devsecops python -m pytest devsecops/tests -q
+```
+
+Le fichier `requirements.txt` reste destiné au dashboard Streamlit Cloud. `requirements-ci.txt` ajoute les dépendances de test Python.
 
 ## Règles de calcul et garde-fous
 
@@ -60,4 +73,4 @@ Le script interroge OSV et produit `high-review-osv-enriched.csv`. Les avis enri
 streamlit run devsecops/dashboard/app.py
 ```
 
-Le dashboard cherche les dossiers `reports/evaluation` et `reports/ground-truth` à partir de la racine du dépôt.
+Le dashboard cherche en priorité `reports/dashboard-data` (instantané publié par GitHub Actions), puis utilise `reports/evaluation` comme solution de repli locale. Le Ground Truth reste lu depuis `reports/ground-truth`.

@@ -1,51 +1,74 @@
-name: Royal67 DevSecOps CI/CD
+name: Royal67 DevSecOps CI
 
 on:
   push:
-    branches: [main, devsecops/docker-ci]
+    branches:
+      - main
+      - devsecops/docker-ci
+    paths-ignore:
+      - "reports/dashboard-data/**"
   pull_request:
-    branches: [main, devsecops/docker-ci]
+    branches:
+      - main
+      - devsecops/docker-ci
+    paths-ignore:
+      - "reports/dashboard-data/**"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: royal67-${{ github.ref }}
-  cancel-in-progress: true
+  group: royal67-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VITE_API_URL: "https://royal67-restaurant.onrender.com/"
 
 jobs:
   backend-tests:
     name: Backend - Jest
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: "22"
           cache: npm
           cache-dependency-path: server/package-lock.json
-      - name: Install dependencies
+
+      - name: Install backend dependencies
         working-directory: server
         run: npm ci
-      - name: Run tests
+
+      - name: Run Jest tests
         working-directory: server
-        run: npm test -- --runInBand
+        run: npm test
 
   frontend-build:
-    name: Frontend - production build
+    name: Frontend - Vite production build
     runs-on: ubuntu-24.04
+    env:
+      VITE_API_URL: "https://royal67-restaurant.onrender.com/"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: "22"
           cache: npm
           cache-dependency-path: client/package-lock.json
-      - name: Install dependencies
+
+      - name: Install frontend dependencies
         working-directory: client
         run: npm ci
-      - name: Build React
+
+      - name: Build React application
         working-directory: client
         run: npm run build
 
@@ -53,158 +76,324 @@ jobs:
     name: Security - Semgrep SAST
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare report directory
+        run: mkdir -p reports/scans
+
       - name: Run Semgrep
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/src" \
             -w /src \
             semgrep/semgrep:1.182.1 \
-            semgrep scan --config p/default --json \
-            --output semgrep-report.json \
-            --exclude node_modules --exclude dist server client
+            semgrep scan \
+              --config p/default \
+              --json \
+              --output /src/reports/scans/semgrep-report.json \
+              --exclude node_modules \
+              --exclude dist \
+              server client
+
+      - name: Redact sensitive source snippets from Semgrep JSON
+        if: always()
+        run: |
+          python3 devsecops/scripts/sanitize_scan_reports.py \
+            --semgrep reports/scans/semgrep-report.json
+
       - name: Upload Semgrep report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: semgrep-sast-report
-          path: semgrep-report.json
+          path: reports/scans/semgrep-report.json
           if-no-files-found: warn
           retention-days: 30
 
   security-trivy:
-    name: Security - Trivy filesystem and production images
+    name: Security - Trivy filesystem and Docker images
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare report directory
+        run: mkdir -p reports/scans
+
       - name: Trivy filesystem scan
         run: |
-          mkdir -p reports
-          docker run --rm -v "${{ github.workspace }}:/src" -w /src \
-            aquasec/trivy:0.69.3 fs \
-            --scanners vuln,misconfig,secret --timeout 20m \
-            --skip-dirs node_modules --skip-dirs dist \
-            --format json --output /src/reports/trivy-fs-report.json .
-      - name: Build production backend image
-        run: docker build -t royal67-backend:ci ./server
-      - name: Build production frontend image
-        run: docker build --build-arg VITE_API_URL=/ -t royal67-frontend:ci ./client
+          docker run --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            aquasec/trivy:0.69.3 \
+            fs \
+              --scanners vuln,misconfig,secret \
+              --timeout 20m \
+              --skip-dirs .git \
+              --skip-dirs node_modules \
+              --skip-dirs dist \
+              --skip-dirs .venv \
+              --skip-dirs venv \
+              --skip-dirs reports \
+              --format json \
+              --output /src/reports/scans/trivy-fs-report.json \
+              .
+
+      - name: Build backend Docker image
+        run: |
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            -t royal67-backend:ci \
+            ./server
+
+      - name: Build frontend Docker image for security analysis
+        run: |
+          docker build \
+            --build-arg VITE_API_URL="${VITE_API_URL}" \
+            -t royal67-frontend:ci \
+            ./client
+
       - name: Trivy backend image scan
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}:/src" -v trivy-cache:/root/.cache/ -w /src \
-            aquasec/trivy:0.69.3 image --scanners vuln,misconfig,secret --timeout 20m \
-            --format json --output /src/reports/trivy-backend-image-report.json royal67-backend:ci
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v trivy-cache:/root/.cache/ \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            aquasec/trivy:0.69.3 \
+            image \
+              --scanners vuln,misconfig,secret \
+              --timeout 20m \
+              --format json \
+              --output /src/reports/scans/trivy-backend-image-report.json \
+              royal67-backend:ci
+
       - name: Trivy frontend image scan
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}:/src" -v trivy-cache:/root/.cache/ -w /src \
-            aquasec/trivy:0.69.3 image --scanners vuln,misconfig,secret --timeout 20m \
-            --format json --output /src/reports/trivy-frontend-image-report.json royal67-frontend:ci
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v trivy-cache:/root/.cache/ \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            aquasec/trivy:0.69.3 \
+            image \
+              --scanners vuln,misconfig,secret \
+              --timeout 20m \
+              --format json \
+              --output /src/reports/scans/trivy-frontend-image-report.json \
+              royal67-frontend:ci
+
+      - name: Redact secret values from Trivy JSON reports
+        if: always()
+        run: |
+          python3 devsecops/scripts/sanitize_scan_reports.py \
+            --trivy reports/scans/trivy-fs-report.json \
+            --trivy reports/scans/trivy-backend-image-report.json \
+            --trivy reports/scans/trivy-frontend-image-report.json
+
+      - name: Save the exact scanned backend image
+        run: docker save royal67-backend:ci -o reports/scans/backend-image.tar
+
       - name: Upload Trivy reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: trivy-security-reports-production
-          path: reports/
+          name: trivy-security-reports
+          path: |
+            reports/scans/trivy-fs-report.json
+            reports/scans/trivy-backend-image-report.json
+            reports/scans/trivy-frontend-image-report.json
           if-no-files-found: warn
           retention-days: 30
 
-  publish-images:
-    name: Build and publish images to GHCR
-    needs: [backend-tests, frontend-build, security-sast, security-trivy]
-    if: github.event_name != 'pull_request'
+      - name: Upload scanned backend image
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: royal67-backend-image
+          path: reports/scans/backend-image.tar
+          if-no-files-found: error
+          retention-days: 7
+
+  evaluate-reports:
+    name: DevSecOps - Python evaluation
     runs-on: ubuntu-24.04
+    needs:
+      - security-sast
+      - security-trivy
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: devsecops/requirements-ci.txt
+
+      - name: Install evaluator dependencies
+        run: python -m pip install -r devsecops/requirements-ci.txt
+
+      - name: Run evaluator unit tests
+        env:
+          PYTHONPATH: devsecops
+        run: python -m pytest devsecops/tests -q
+
+      - name: Download Semgrep report
+        uses: actions/download-artifact@v7
+        with:
+          name: semgrep-sast-report
+          path: reports/scans
+
+      - name: Download Trivy reports
+        uses: actions/download-artifact@v7
+        with:
+          name: trivy-security-reports
+          path: reports/scans
+
+      - name: Verify scanner reports exist
+        run: |
+          test -s reports/scans/semgrep-report.json
+          test -s reports/scans/trivy-fs-report.json
+          test -s reports/scans/trivy-backend-image-report.json
+          test -s reports/scans/trivy-frontend-image-report.json
+          test -s reports/ground-truth/ground-truth.csv
+
+      - name: Evaluate current CI scan reports
+        env:
+          PYTHONPATH: devsecops
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          python -m evaluator.main \
+            --semgrep reports/scans/semgrep-report.json \
+            --trivy reports/scans/trivy-fs-report.json \
+            --trivy reports/scans/trivy-backend-image-report.json \
+            --trivy reports/scans/trivy-frontend-image-report.json \
+            --ground-truth reports/ground-truth/ground-truth.csv \
+            --output-dir reports/evaluation
+
+      - name: Validate generated summary
+        run: python -m json.tool reports/evaluation/summary.json > /dev/null
+
+      - name: Upload evaluation results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: evaluation-results
+          path: reports/evaluation/
+          if-no-files-found: warn
+          retention-days: 30
+
+  publish-dashboard-data:
+    name: Publish safe evaluation data for Streamlit
+    runs-on: ubuntu-24.04
+    needs:
+      - evaluate-reports
+    if: github.event_name == 'push' && github.ref == 'refs/heads/devsecops/docker-ci'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout production branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Download evaluation results
+        uses: actions/download-artifact@v7
+        with:
+          name: evaluation-results
+          path: reports/dashboard-data
+
+      - name: Commit dashboard data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/dashboard-data/summary.json \
+                  reports/dashboard-data/normalized_findings.csv \
+                  reports/dashboard-data/deduplicated_findings.csv \
+                  reports/dashboard-data/severity_summary.csv
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification des données Streamlit."
+          else
+            git commit -m "chore(dashboard): update CI evaluation data [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+  publish-backend-ghcr:
+    name: Publish scanned backend image to GHCR
+    runs-on: ubuntu-24.04
+    needs:
+      - backend-tests
+      - frontend-build
+      - security-sast
+      - security-trivy
+      - evaluate-reports
+    if: github.event_name != 'pull_request'
     permissions:
       contents: read
       packages: write
-    outputs:
-      image_tag: ${{ steps.vars.outputs.image_tag }}
-      image_prefix: ${{ steps.vars.outputs.image_prefix }}
     steps:
-      - uses: actions/checkout@v7
-      - name: Define immutable image tags
-        id: vars
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download exact scanned backend image
+        uses: actions/download-artifact@v7
+        with:
+          name: royal67-backend-image
+          path: image-artifact
+
+      - name: Load scanned Docker image
+        run: docker load -i image-artifact/backend-image.tar
+
+      - name: Define GHCR image name
+        id: image
         shell: bash
         run: |
-          REPOSITORY="${GITHUB_REPOSITORY,,}"
-          echo "image_prefix=ghcr.io/${REPOSITORY}" >> "$GITHUB_OUTPUT"
-          echo "image_tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-      - name: Login to GHCR
+          REPOSITORY="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "name=ghcr.io/${REPOSITORY}-backend" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Publish backend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./server
-          push: true
-          tags: |
-            ${{ steps.vars.outputs.image_prefix }}-backend:${{ steps.vars.outputs.image_tag }}
-            ${{ steps.vars.outputs.image_prefix }}-backend:latest
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-      - name: Publish frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./client
-          push: true
-          build-args: |
-            VITE_API_URL=/
-          tags: |
-            ${{ steps.vars.outputs.image_prefix }}-frontend:${{ steps.vars.outputs.image_tag }}
-            ${{ steps.vars.outputs.image_prefix }}-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
 
-  deploy:
-    name: Deploy to Windows Docker Desktop server
-    needs: publish-images
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devsecops/docker-ci')
-    runs-on: [self-hosted, windows, royal67-deploy]
-    environment: production
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - uses: actions/checkout@v7
-      - name: Login to GHCR on deployment host
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
-      - name: Prepare persistent deployment directory
-        shell: pwsh
+      - name: Tag and publish immutable image
         env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          IMAGE_PREFIX: ${{ needs.publish-images.outputs.image_prefix }}
-          PUBLIC_ORIGIN: ${{ secrets.PUBLIC_ORIGIN }}
+          IMAGE_NAME: ${{ steps.image.outputs.name }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          $deployDir = 'C:\royal67-deploy'
-          New-Item -ItemType Directory -Force -Path $deployDir | Out-Null
-          Copy-Item -Force 'docker-compose.prod.yml' (Join-Path $deployDir 'docker-compose.prod.yml')
-          if (Test-Path (Join-Path $deployDir 'database')) { Remove-Item -Recurse -Force (Join-Path $deployDir 'database') }
-          Copy-Item -Recurse -Force 'database' (Join-Path $deployDir 'database')
-          @(
-            "DB_NAME=$env:DB_NAME",
-            "DB_USER=$env:DB_USER",
-            "DB_PASSWORD=$env:DB_PASSWORD",
-            "IMAGE_PREFIX=$env:IMAGE_PREFIX",
-            "PUBLIC_ORIGIN=$(if ($env:PUBLIC_ORIGIN) { $env:PUBLIC_ORIGIN } else { 'http://localhost:8080' })",
-            'WEB_PORT=8080'
-          ) | Set-Content -Path (Join-Path $deployDir '.env') -Encoding ascii
-          Copy-Item -Force 'scripts/deploy-production.ps1' (Join-Path $deployDir 'deploy-production.ps1')
-      - name: Deploy immutable image version with health check and rollback
-        shell: pwsh
+          docker tag royal67-backend:ci "${IMAGE_NAME}:${IMAGE_TAG}"
+          docker push "${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Publish latest tag for the production branch
+        if: github.ref == 'refs/heads/devsecops/docker-ci'
         env:
-          IMAGE_TAG: ${{ needs.publish-images.outputs.image_tag }}
+          IMAGE_NAME: ${{ steps.image.outputs.name }}
         run: |
-          Set-Location 'C:\royal67-deploy'
-          .\deploy-production.ps1 -ImageTag $env:IMAGE_TAG
+          docker tag royal67-backend:ci "${IMAGE_NAME}:latest"
+          docker push "${IMAGE_NAME}:latest"
+
+  deploy-production:
+    name: CD - deploy verified production commit
+    needs:
+      - backend-tests
+      - frontend-build
+      - security-sast
+      - security-trivy
+      - evaluate-reports
+      - publish-dashboard-data
+      - publish-backend-ghcr
+    if: github.event_name == 'push' && github.ref == 'refs/heads/devsecops/docker-ci'
+    uses: ./.github/workflows/cd.yml
+    secrets: inherit

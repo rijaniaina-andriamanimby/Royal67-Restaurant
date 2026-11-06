@@ -1,5 +1,13 @@
 const { Pool } = require('pg')
 
+if (
+    process.env.NODE_ENV === 'production' &&
+    !process.env.DATABASE_URL &&
+    !process.env.DB_HOST
+) {
+    throw new Error('DATABASE_URL ou DB_HOST doit être défini en production')
+}
+
 const poolConfig = process.env.DATABASE_URL
     ? {
         connectionString: process.env.DATABASE_URL,

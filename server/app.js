@@ -12,7 +12,11 @@ app.use(cors({
 app.get('/health', async (_req, res) => {
     try {
         await db.query('SELECT 1')
-        res.status(200).json({ status: 'ok', database: 'connected' })
+        res.status(200).json({
+            status: 'ok',
+            database: 'connected',
+            commit: process.env.RENDER_GIT_COMMIT || null
+        })
     } catch (_error) {
         res.status(503).json({ status: 'error', database: 'unavailable' })
     }

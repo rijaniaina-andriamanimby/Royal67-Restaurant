@@ -41,7 +41,15 @@ def find_project_root() -> Path:
 
 PROJECT_ROOT = find_project_root()
 
-DEFAULT_EVALUATION_DIR = PROJECT_ROOT / "reports" / "evaluation"
+# Streamlit Cloud reads the latest CI-published, sanitized evaluation snapshot.
+# Local evaluation output remains the fallback for development.
+DASHBOARD_DATA_DIR = PROJECT_ROOT / "reports" / "dashboard-data"
+LOCAL_EVALUATION_DIR = PROJECT_ROOT / "reports" / "evaluation"
+DEFAULT_EVALUATION_DIR = (
+    DASHBOARD_DATA_DIR
+    if (DASHBOARD_DATA_DIR / "summary.json").is_file()
+    else LOCAL_EVALUATION_DIR
+)
 DEFAULT_GT_DIR = PROJECT_ROOT / "reports" / "ground-truth"
 
 
@@ -121,6 +129,17 @@ if not summary:
 
     st.stop()
 
+run_metadata = summary.get("run_metadata") or {}
+if run_metadata:
+    commit_sha = run_metadata.get("commit_sha") or "local / non spécifié"
+    branch_name = run_metadata.get("branch") or "local"
+    generated_at = run_metadata.get("generated_at_utc") or "date inconnue"
+    st.caption(
+        f"Dernière évaluation CI : {generated_at} UTC · "
+        f"branche {branch_name} · commit {str(commit_sha)[:12]}"
+    )
+else:
+    st.caption("Métadonnées d'exécution indisponibles pour ce rapport.")
 
 findings = load_csv(
     evaluation_dir / "normalized_findings.csv"

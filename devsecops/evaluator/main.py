@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
-from collections import Counter
 
 from evaluator.parsers.semgrep_parser import load_semgrep
 from evaluator.parsers.trivy_parser import load_trivy
@@ -20,8 +21,17 @@ def build_summary(frame, dedup_frame, scan_metadata, metrics):
             "by_severity": {str(k): int(v) for k, v in df["severity"].value_counts().items()},
         }
 
+    run_metadata = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "commit_sha": os.getenv("GITHUB_SHA") or None,
+        "branch": os.getenv("GITHUB_REF_NAME") or None,
+        "workflow_run_id": os.getenv("GITHUB_RUN_ID") or None,
+        "workflow_run_number": os.getenv("GITHUB_RUN_NUMBER") or None,
+    }
+
     return {
         "project": "Royal67 Restaurant",
+        "run_metadata": run_metadata,
         "scan_metadata": scan_metadata,
         "raw": counts(frame),
         "deduplicated": counts(dedup_frame),
@@ -54,9 +64,11 @@ def main():
         findings.extend(parsed)
         metadata.append(meta)
 
-    if not findings:
-        raise SystemExit("Aucun rapport fourni ou aucune observation détectée.")
+    if not metadata:
+        raise SystemExit("Aucun rapport Semgrep ou Trivy valide n'a été fourni.")
 
+    # An empty findings list is a valid scan outcome: it means the scanners
+    # completed and reported no findings. Keep the empty CSVs and summary.
     frame = to_dataframe(findings)
     dedup_frame = deduplicate(frame)
     gt = load_ground_truth(args.ground_truth) if args.ground_truth else None

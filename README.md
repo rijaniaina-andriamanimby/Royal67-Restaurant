@@ -68,8 +68,15 @@ Cloner le dépôt :
    ```bash
    git clone https://github.com/tonutilisateur/gestion-restaurant.git
 
-## Production Docker, GHCR et déploiement continu
+## Déploiement cloud et DevSecOps
 
-La version de production utilise un build multi-stage React/Vite puis Nginx non privilégié. Le Dockerfile de développement reste disponible dans `client/Dockerfile.dev` et est utilisé par `docker-compose.yml`.
+- Frontend React/Vite : Vercel.
+- Backend Express : Render.
+- PostgreSQL : Neon.
+- CI : GitHub Actions (Jest, build Vite, Semgrep, Trivy, évaluation Python).
+- Registre : GitHub Container Registry (GHCR), pour l'image backend analysée et versionnée.
+- Dashboard : Streamlit Community Cloud, alimenté par `reports/dashboard-data/`.
 
-Voir [DEPLOYMENT-GHCR.md](DEPLOYMENT-GHCR.md) pour les secrets GitHub, le runner Windows self-hosted, le déploiement GHCR, les health checks et le rollback. Le déploiement de production utilise `docker-compose.prod.yml`.
+Le workflow `ci.yml` valide les changements et publie les rapports. Le workflow `cd.yml` déploie uniquement le SHA validé sur Render puis Vercel. GHCR est un registre de traçabilité : Render continue de construire le backend depuis le dépôt GitHub.
+
+Voir [DEPLOYMENT-GHCR.md](DEPLOYMENT-GHCR.md) pour les étapes de configuration.

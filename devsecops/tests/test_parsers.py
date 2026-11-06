@@ -49,6 +49,22 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(len(findings), 2)
         self.assertEqual({x["finding_type"] for x in findings}, {"vulnerability", "misconfiguration"})
 
+    def test_empty_scanner_reports_are_valid(self):
+        path = self.write_json({
+            "version": "1.0",
+            "results": [],
+            "errors": [],
+            "paths": {"scanned": ["server/app.js"]},
+            "time": {"total_time": 0.1}
+        })
+        findings, metadata = load_semgrep(path)
+        self.assertEqual(findings, [])
+        self.assertEqual(metadata["findings_reported"], 0)
+        empty_frame = to_dataframe(findings)
+        self.assertTrue(empty_frame.empty)
+        deduplicated = deduplicate(empty_frame)
+        self.assertTrue(deduplicated.empty)
+
     def test_image_dedup_keeps_occurrences(self):
         frame = to_dataframe([
             {"scanner":"trivy","finding_type":"vulnerability","finding_id":"CVE-X",

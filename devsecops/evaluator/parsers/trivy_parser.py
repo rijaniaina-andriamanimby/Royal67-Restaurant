@@ -94,7 +94,7 @@ def load_trivy(path: str | Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
                 "finding_type": "secret",
                 "finding_id": rule_id,
                 "title": item.get("Title") or rule_id,
-                "message": item.get("Match") or item.get("Title") or "",
+                "message": item.get("Title") or rule_id,
                 "severity": str(item.get("Severity") or "UNKNOWN").upper(),
                 "path": item.get("Target") or target,
                 "target": target,
@@ -113,7 +113,7 @@ def load_trivy(path: str | Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
                 "artifact_type": artifact_type,
                 "result_type": result_type,
                 "result_class": result_class,
-                "description": item.get("Match") or "",
+                "description": "Secret détecté par Trivy ; contenu masqué.",
                 "published_date": "",
             })
 

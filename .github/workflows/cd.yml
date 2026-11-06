@@ -1,0 +1,117 @@
+name: Royal67 Cloud CD
+
+on:
+  workflow_call:
+    secrets:
+      RENDER_DEPLOY_HOOK_URL:
+        required: true
+      VERCEL_TOKEN:
+        required: true
+      VERCEL_ORG_ID:
+        required: true
+      VERCEL_PROJECT_ID:
+        required: true
+permissions:
+  contents: read
+
+concurrency:
+  group: royal67-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    name: Deploy verified commit to Render and Vercel
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - name: Checkout the exact commit validated by CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Trigger Render deployment for the verified SHA
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Le secret RENDER_DEPLOY_HOOK_URL est absent."
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 5 \
+            --get \
+            --data-urlencode "ref=${DEPLOY_SHA}" \
+            "$RENDER_DEPLOY_HOOK_URL"
+
+      - name: Wait until the exact Render commit is healthy
+        env:
+          HEALTH_URL: https://royal67-restaurant.onrender.com/health
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          echo "Attente du déploiement Render du commit ${DEPLOY_SHA}..."
+          for attempt in $(seq 1 48); do
+            body="$(curl --fail --silent --show-error "$HEALTH_URL" 2>/dev/null || true)"
+            deployed_sha="$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("commit") or "")' 2>/dev/null || true)"
+
+            if [ -n "$deployed_sha" ] && [[ "$DEPLOY_SHA" == "$deployed_sha"* ]]; then
+              echo "Render sert maintenant le commit ${deployed_sha}."
+              printf '%s\n' "$body"
+              exit 0
+            fi
+
+            echo "Tentative ${attempt}/48 : commit observé='${deployed_sha:-indisponible}'."
+            sleep 10
+          done
+
+          echo "::error::Render n'a pas confirmé le commit ${DEPLOY_SHA} dans le délai imparti."
+          exit 1
+
+      - name: Setup Node.js for Vercel CLI
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel production configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=production
+
+      - name: Build Vercel production output
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel build --prod
+
+      - name: Deploy prebuilt frontend to Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: vercel deploy --prebuilt --prod --meta "githubCommitSha=${DEPLOY_SHA}"
+
+      - name: Verify production frontend
+        env:
+          FRONTEND_URL: https://royal67-restaurant-client.vercel.app/
+        run: |
+          echo "Vérification du frontend Vercel..."
+          curl --fail --silent --show-error \
+            --retry 24 \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --retry-max-time 180 \
+            "$FRONTEND_URL" \
+            --output /dev/null
+
+      - name: Final backend health check
+        run: |
+          curl --fail --silent --show-error \
+            https://royal67-restaurant.onrender.com/health

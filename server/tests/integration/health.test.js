@@ -13,8 +13,27 @@ describe('GET /health', () => {
     const response = await request(app).get('/health');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'ok', database: 'connected' });
+    expect(response.body).toEqual({ status: 'ok', database: 'connected', commit: null });
     expect(db.query).toHaveBeenCalledWith('SELECT 1');
+  });
+
+
+  test('includes the Render commit identifier when available', async () => {
+    const previousCommit = process.env.RENDER_GIT_COMMIT;
+    process.env.RENDER_GIT_COMMIT = 'test-commit-sha';
+    db.query.mockResolvedValue({ rows: [{ '?column?': 1 }] });
+
+    try {
+      const response = await request(app).get('/health');
+      expect(response.status).toBe(200);
+      expect(response.body.commit).toBe('test-commit-sha');
+    } finally {
+      if (previousCommit === undefined) {
+        delete process.env.RENDER_GIT_COMMIT;
+      } else {
+        process.env.RENDER_GIT_COMMIT = previousCommit;
+      }
+    }
   });
 
   test('returns 503 when PostgreSQL is unavailable', async () => {
