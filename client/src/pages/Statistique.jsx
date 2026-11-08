@@ -17,27 +17,26 @@ const Statistique = () => {
   const loadStats = useCallback(async () => {
     try {
       const now = new Date()
-      let start
+let start
 
-      if (filter === "day") {
-        const d = new Date()
-        d.setHours(0, 0, 0, 0)
-        start = d.toISOString().split("T")[0]
-      }
-      if (filter === "week") {
-        const d = new Date()
-        d.setDate(d.getDate() - 7)
-        start = d.toISOString().split("T")[0]
-      }
-      if (filter === "month") {
-        const d = new Date()
-        d.setMonth(d.getMonth() - 1)
-        start = d.toISOString().split("T")[0]
-      }
+if (filter === "day") {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  start = d.toISOString().split("T")[0]
+} else if (filter === "week") {
+  const d = new Date()
+  d.setDate(d.getDate() - 7)
+  start = d.toISOString().split("T")[0]
+} else {
+  // Par défaut ("month" ou toute autre valeur de repli)
+  const d = new Date()
+  d.setMonth(d.getMonth() - 1)
+  start = d.toISOString().split("T")[0]
+}
 
-      const endDate = new Date()
-      endDate.setHours(23, 59, 59, 999)
-      const end = endDate.toISOString()
+const endDate = new Date()
+endDate.setHours(23, 59, 59, 999)
+const end = endDate.toISOString()
 
       const [resStats, resSales, resCat, resPay] = await Promise.all([
         api.get("/stats"),
@@ -90,7 +89,7 @@ const Statistique = () => {
         </div>
 
         {/* Sales Chart */}
-        <SalesByDayChart data={sales || 0} />
+        <SalesByDayChart data={sales || []} />
 
         {/* Category Chart
         <CategoryStatsChart data={categories} />
