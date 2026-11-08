@@ -90,10 +90,16 @@ jobs:
             semgrep/semgrep:1.182.1 \
             semgrep scan \
               --config p/default \
+              --config p/security-audit \
+              --config p/javascript \
+              --config p/typescript \
+              --config p/nodejs \
               --json \
+              --verbose \
               --output /src/reports/scans/semgrep-report.json \
               --exclude node_modules \
               --exclude dist \
+              --exclude coverage \
               server client
 
       # Docker containers commonly write mounted files as root.

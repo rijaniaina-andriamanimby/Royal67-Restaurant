@@ -1,7 +1,8 @@
-
 from __future__ import annotations
 
 import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,7 @@ import streamlit as st
 
 
 # ============================================================
-# CONFIGURATION
+# 1. CONFIGURATION
 # ============================================================
 
 st.set_page_config(
@@ -18,21 +19,60 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("🛡️ Royal67 — DevSecOps Security Evaluation")
+st.title("🛡️ Royal67 — DevSecOps")
 st.caption(
-    "Évaluation expérimentale des outils de sécurité "
-    "Semgrep et Trivy"
+    "Plateforme d'analyse et d'évaluation expérimentale "
+    "des outils de sécurité Semgrep et Trivy."
 )
 
 
 # ============================================================
-# CHEMINS DU PROJET
+# 2. SCHÉMA GROUND TRUTH V2
+# ============================================================
+
+GT_COLUMNS = [
+    "gt_id",
+    "app_version_or_commit",
+    "category",
+    "subcategory",
+    "expected_scanner",
+    "component",
+    "installed_version",
+    "advisory_id",
+    "scope",
+    "target",
+    "artifact",
+    "location_or_line",
+    "expected_rule_id",
+    "expected_finding",
+    "verification_status",
+    "application_applicability",
+    "evidence_reference",
+    "notes",
+]
+
+VALID_STATUSES = [
+    "REVIEW_REQUIRED",
+    "CONFIRMED_AFFECTED",
+    "CONFIRMED_NOT_AFFECTED",
+]
+
+VALIDATED_STATUSES = {
+    "CONFIRMED_AFFECTED",
+    "CONFIRMED_NOT_AFFECTED",
+}
+
+
+# ============================================================
+# 3. CHEMINS DU PROJET
 # ============================================================
 
 def find_project_root() -> Path:
+
     current = Path(__file__).resolve()
 
     for parent in current.parents:
+
         if (parent / "reports").is_dir():
             return parent
 
@@ -41,53 +81,418 @@ def find_project_root() -> Path:
 
 PROJECT_ROOT = find_project_root()
 
-# Streamlit Cloud reads the latest CI-published, sanitized evaluation snapshot.
-# Local evaluation output remains the fallback for development.
-DASHBOARD_DATA_DIR = PROJECT_ROOT / "reports" / "dashboard-data"
-LOCAL_EVALUATION_DIR = PROJECT_ROOT / "reports" / "evaluation"
+REPORTS_DIR = PROJECT_ROOT / "reports"
+
+DASHBOARD_DATA_DIR = (
+    REPORTS_DIR / "dashboard-data"
+)
+
+LOCAL_EVALUATION_DIR = (
+    REPORTS_DIR / "evaluation"
+)
+
+GROUND_TRUTH_DIR = (
+    REPORTS_DIR / "ground-truth"
+)
+
 DEFAULT_EVALUATION_DIR = (
     DASHBOARD_DATA_DIR
-    if (DASHBOARD_DATA_DIR / "summary.json").is_file()
+    if (DASHBOARD_DATA_DIR / "summary.json").exists()
     else LOCAL_EVALUATION_DIR
 )
-DEFAULT_GT_DIR = PROJECT_ROOT / "reports" / "ground-truth"
 
 
 # ============================================================
-# CHARGEMENT DES FICHIERS
+# 4. FONCTIONS DE CHARGEMENT
 # ============================================================
 
 def load_json(path: Path) -> dict:
+
     if not path.exists():
         return {}
 
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+
+        return json.loads(
+            path.read_text(encoding="utf-8")
+        )
+
     except (json.JSONDecodeError, OSError):
+
         return {}
 
 
 def load_csv(path: Path) -> pd.DataFrame:
+
     if not path.exists():
         return pd.DataFrame()
 
     try:
+
         return pd.read_csv(
             path,
             dtype=str,
             keep_default_na=False,
             encoding="utf-8-sig",
         )
-    except (pd.errors.ParserError, OSError, UnicodeError) as exc:
-        st.error(f"Impossible de lire {path.name} : {exc}")
+
+    except (
+        pd.errors.ParserError,
+        OSError,
+        UnicodeError,
+    ) as exc:
+
+        st.error(
+            f"Impossible de lire {path.name} : {exc}"
+        )
+
         return pd.DataFrame()
 
 
 # ============================================================
-# SIDEBAR
+# 5. NORMALISATION DU GROUND TRUTH
 # ============================================================
 
-st.sidebar.header("⚙️ Configuration")
+def normalize_ground_truth(
+    frame: pd.DataFrame,
+) -> pd.DataFrame:
+
+    if frame.empty:
+
+        return pd.DataFrame(
+            columns=GT_COLUMNS
+        )
+
+    frame = frame.copy()
+
+    # --------------------------------------------------------
+    # Compatibilité avec les anciens noms de colonnes
+    # --------------------------------------------------------
+
+    aliases = {
+        "scanner": "expected_scanner",
+        "package": "component",
+        "finding_id": "advisory_id",
+        "rationale": "notes",
+        "rule_id": "expected_rule_id",
+    }
+
+    for old, new in aliases.items():
+
+        if old in frame.columns and new not in frame.columns:
+
+            frame = frame.rename(
+                columns={old: new}
+            )
+
+    # --------------------------------------------------------
+    # Conversion des anciennes catégories
+    # --------------------------------------------------------
+
+    if "category" not in frame.columns:
+
+        def infer_category(row):
+
+            finding_type = str(
+                row.get("finding_type", "")
+            ).lower()
+
+            scanner = str(
+                row.get("expected_scanner", "")
+            ).lower()
+
+            if finding_type == "vulnerability":
+                return "SCA"
+
+            if "semgrep" in scanner:
+                return "SAST"
+
+            if finding_type in {
+                "misconfiguration",
+                "config",
+            }:
+                return "CONTAINER"
+
+            return "APPLICATION"
+
+        frame["category"] = frame.apply(
+            infer_category,
+            axis=1,
+        )
+
+    # --------------------------------------------------------
+    # Génération des identifiants manquants
+    # --------------------------------------------------------
+
+    if "gt_id" not in frame.columns:
+
+        frame["gt_id"] = [
+            f"GT-{index:04d}"
+            for index in range(1, len(frame) + 1)
+        ]
+
+    else:
+
+        for index in frame.index:
+
+            if not str(frame.at[index, "gt_id"]).strip():
+
+                frame.at[index, "gt_id"] = (
+                    f"GT-{index + 1:04d}"
+                )
+
+    # --------------------------------------------------------
+    # Ajouter les colonnes V2 manquantes
+    # --------------------------------------------------------
+
+    for column in GT_COLUMNS:
+
+        if column not in frame.columns:
+            frame[column] = ""
+
+    frame = frame[GT_COLUMNS].copy()
+
+    # --------------------------------------------------------
+    # Nettoyage
+    # --------------------------------------------------------
+
+    for column in GT_COLUMNS:
+
+        frame[column] = (
+            frame[column]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+    # Un statut absent ne signifie jamais validé.
+    frame["verification_status"] = (
+        frame["verification_status"]
+        .str.upper()
+    )
+
+    frame.loc[
+        ~frame["verification_status"].isin(
+            VALID_STATUSES
+        ),
+        "verification_status",
+    ] = "REVIEW_REQUIRED"
+
+    return frame
+
+
+# ============================================================
+# 6. SAUVEGARDE DU GROUND TRUTH
+# ============================================================
+
+def save_ground_truth(
+    frame: pd.DataFrame,
+    path: Path,
+) -> None:
+
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    missing = [
+        column
+        for column in GT_COLUMNS
+        if column not in frame.columns
+    ]
+
+    if missing:
+
+        raise ValueError(
+            f"Colonnes V2 manquantes : {missing}"
+        )
+
+    output = frame[GT_COLUMNS].copy()
+
+    temporary_path = path.with_name(
+        path.name + ".tmp"
+    )
+
+    output.to_csv(
+        temporary_path,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    # Remplacement atomique du fichier.
+    os.replace(
+        temporary_path,
+        path,
+    )
+
+
+# ============================================================
+# 7. JOURNAL DE VALIDATION
+# ============================================================
+
+LOG_COLUMNS = [
+    "timestamp_utc",
+    "gt_id",
+    "component",
+    "advisory_id",
+    "previous_status",
+    "decision",
+    "reviewer",
+    "evidence_reference",
+    "notes",
+]
+
+
+def append_validation_log(
+    record: dict,
+    path: Path,
+) -> None:
+
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    log = load_csv(path)
+
+    for column in LOG_COLUMNS:
+
+        if column not in log.columns:
+            log[column] = ""
+
+    new_record = {
+        column: str(record.get(column, ""))
+        for column in LOG_COLUMNS
+    }
+
+    log = pd.concat(
+        [
+            log[LOG_COLUMNS],
+            pd.DataFrame([new_record]),
+        ],
+        ignore_index=True,
+    )
+
+    temporary_path = path.with_name(
+        path.name + ".tmp"
+    )
+
+    log.to_csv(
+        temporary_path,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    os.replace(
+        temporary_path,
+        path,
+    )
+
+
+# ============================================================
+# 8. STATISTIQUES
+# ============================================================
+
+def count_validations(
+    frame: pd.DataFrame,
+) -> int:
+
+    if frame.empty:
+        return 0
+
+    return int(
+        frame["verification_status"]
+        .isin(VALIDATED_STATUSES)
+        .sum()
+    )
+
+
+def count_pending(
+    frame: pd.DataFrame,
+) -> int:
+
+    if frame.empty:
+        return 0
+
+    return int(
+        (
+            frame["verification_status"]
+            == "REVIEW_REQUIRED"
+        ).sum()
+    )
+
+
+def count_values(
+    frame: pd.DataFrame,
+    column: str,
+) -> pd.Series:
+
+    if frame.empty or column not in frame.columns:
+
+        return pd.Series(dtype="int64")
+
+    return frame[column].value_counts()
+
+
+def show_dataframe(
+    frame: pd.DataFrame,
+    message: str = "Aucune donnée disponible.",
+):
+
+    if frame.empty:
+
+        st.info(message)
+
+    else:
+
+        st.dataframe(
+            frame,
+            width="stretch",
+            hide_index=True,
+        )
+
+
+def show_download(
+    frame: pd.DataFrame,
+    filename: str,
+    label: str,
+):
+
+    if frame.empty:
+        return
+
+    st.download_button(
+        label=label,
+        data=frame.to_csv(
+            index=False,
+            encoding="utf-8-sig",
+        ),
+        file_name=filename,
+        mime="text/csv",
+    )
+
+
+def metric_card(
+    column,
+    label: str,
+    value,
+    help_text=None,
+):
+
+    with column:
+
+        st.metric(
+            label,
+            value,
+            help=help_text,
+        )
+
+
+# ============================================================
+# 9. SIDEBAR
+# ============================================================
+
+st.sidebar.title("⚙️ Configuration")
 
 evaluation_dir = Path(
     st.sidebar.text_input(
@@ -99,47 +504,50 @@ evaluation_dir = Path(
 gt_dir = Path(
     st.sidebar.text_input(
         "Dossier Ground Truth",
-        str(DEFAULT_GT_DIR),
+        str(GROUND_TRUTH_DIR),
     )
 )
 
 summary_path = evaluation_dir / "summary.json"
 
-if st.sidebar.button("🔄 Actualiser les données"):
-    st.cache_data.clear()
+gt_path = gt_dir / "ground-truth-v2.csv"
+
+log_path = gt_dir / "validation-log.csv"
+
+if st.sidebar.button(
+    "🔄 Actualiser les données",
+    use_container_width=True,
+):
+
     st.rerun()
 
 
+st.sidebar.divider()
+
+st.sidebar.caption(
+    f"Projet : {PROJECT_ROOT}"
+)
+
+
 # ============================================================
-# RAPPORTS D'ÉVALUATION
+# 10. CHARGEMENT DES DONNÉES
 # ============================================================
 
 summary = load_json(summary_path)
 
 if not summary:
-    st.warning(
-        "Rapport summary.json introuvable ou invalide. "
-        "Exécute d'abord evaluator.main."
+
+    st.error(
+        "Rapport summary.json introuvable."
     )
 
     st.code(
-        "python -m evaluator.main --help",
+        "python -m evaluator.main",
         language="bash",
     )
 
     st.stop()
 
-run_metadata = summary.get("run_metadata") or {}
-if run_metadata:
-    commit_sha = run_metadata.get("commit_sha") or "local / non spécifié"
-    branch_name = run_metadata.get("branch") or "local"
-    generated_at = run_metadata.get("generated_at_utc") or "date inconnue"
-    st.caption(
-        f"Dernière évaluation CI : {generated_at} UTC · "
-        f"branche {branch_name} · commit {str(commit_sha)[:12]}"
-    )
-else:
-    st.caption("Métadonnées d'exécution indisponibles pour ce rapport.")
 
 findings = load_csv(
     evaluation_dir / "normalized_findings.csv"
@@ -149,16 +557,11 @@ dedup = load_csv(
     evaluation_dir / "deduplicated_findings.csv"
 )
 
-
-# ============================================================
-# FICHIERS GROUND TRUTH
-# ============================================================
-
-gt = load_csv(gt_dir / "ground-truth.csv")
-
-validation_log = load_csv(
-    gt_dir / "validation-log.csv"
+gt = normalize_ground_truth(
+    load_csv(gt_path)
 )
+
+validation_log = load_csv(log_path)
 
 high_review = load_csv(
     gt_dir / "high-review.csv"
@@ -172,121 +575,101 @@ candidates = load_csv(
     gt_dir / "trivy-review-candidates.csv"
 )
 
-methodology_path = gt_dir / "methodology.md"
+metrics = summary.get(
+    "ground_truth_metrics",
+    {},
+)
 
-methodology = (
-    methodology_path.read_text(encoding="utf-8")
-    if methodology_path.exists()
-    else "Méthodologie non disponible."
+run_metadata = summary.get(
+    "run_metadata",
+    {},
 )
 
 
 # ============================================================
-# FONCTIONS UTILITAIRES
+# 11. INFORMATIONS SUR L'EXÉCUTION
 # ============================================================
 
-def count_values(
-    frame: pd.DataFrame,
-    column: str,
-) -> pd.Series:
+if run_metadata:
 
-    if frame.empty or column not in frame.columns:
-        return pd.Series(dtype="int64")
-
-    return frame[column].value_counts()
-
-
-def show_download(
-    frame: pd.DataFrame,
-    filename: str,
-    label: str,
-):
-    if frame.empty:
-        st.caption(f"{label} : aucune donnée disponible.")
-        return
-
-    st.download_button(
-        label=label,
-        data=frame.to_csv(
-            index=False,
-            encoding="utf-8-sig",
-        ),
-        file_name=filename,
-        mime="text/csv",
-        key=f"download_{filename}",
+    commit = (
+        run_metadata.get("commit_sha")
+        or "local"
     )
 
+    branch = (
+        run_metadata.get("branch")
+        or "non spécifiée"
+    )
 
-def show_dataframe(
-    frame: pd.DataFrame,
-    message: str = "Aucune donnée disponible.",
-):
-    if frame.empty:
-        st.info(message)
-    else:
-        st.dataframe(
-            frame,
-            width="stretch",
-            hide_index=True,
-        )
+    generated = (
+        run_metadata.get("generated_at_utc")
+        or "date inconnue"
+    )
 
-
-def show_metric(value, label, help_text=None):
-    st.metric(
-        label=label,
-        value=value,
-        help=help_text,
+    st.caption(
+        f"Évaluation : {generated} UTC · "
+        f"Branche : {branch} · "
+        f"Commit : {str(commit)[:12]}"
     )
 
 
 # ============================================================
-# TABLEAU DE BORD GÉNÉRAL
+# 12. VUE GÉNÉRALE
 # ============================================================
 
 st.header("📊 Vue générale")
 
 raw = summary.get("raw", {})
-deduplicated = summary.get("deduplicated", {})
 
-metrics = summary.get("ground_truth_metrics", {})
+deduplicated = summary.get(
+    "deduplicated",
+    {},
+)
 
-gt_columns = st.columns(4)
+scanner_count = (
+    findings["scanner"].nunique()
+    if not findings.empty and "scanner" in findings.columns
+    else 0
+)
 
-with gt_columns[0]:
-    show_metric(
-        raw.get("observations", 0),
-        "Observations brutes",
-    )
+overview = st.columns(4)
 
-with gt_columns[1]:
-    show_metric(
-        deduplicated.get("observations", 0),
-        "Après déduplication",
-    )
+metric_card(
+    overview[0],
+    "Observations brutes",
+    raw.get("observations", 0),
+)
 
-with gt_columns[2]:
-    show_metric(
-        len(summary.get("scan_metadata", [])),
-        "Scanners",
-    )
+metric_card(
+    overview[1],
+    "Après déduplication",
+    deduplicated.get("observations", 0),
+)
 
-with gt_columns[3]:
-    show_metric(
-        len(gt),
-        "Références Ground Truth",
-    )
+metric_card(
+    overview[2],
+    "Scanners",
+    scanner_count,
+)
+
+metric_card(
+    overview[3],
+    "Références Ground Truth",
+    len(gt),
+)
 
 
 # ============================================================
-# ONGLETS
+# 13. ONGLETS
 # ============================================================
 
-tab_overview, tab_gt, tab_review, tab_findings = st.tabs(
+tab_overview, tab_gt, tab_validation, tab_scanners = st.tabs(
     [
         "📊 Vue générale",
         "🎯 Ground Truth",
-        "🔍 Validation des vulnérabilités",
-        "🛡️ Résultats des scanners",
+        "✍️ Validation",
+        "🛡️ Scanners",
     ]
 )
 
@@ -301,17 +684,23 @@ with tab_overview:
 
     if not findings.empty and "severity" in findings.columns:
 
-        severity = (
-            findings.groupby("severity")
-            .size()
-            .sort_values(ascending=False)
+        severity_counts = (
+            findings["severity"]
+            .value_counts()
         )
 
-        st.bar_chart(severity)
+        st.bar_chart(severity_counts)
+
+    else:
+
+        st.info(
+            "Aucune donnée de sévérité."
+        )
 
     left, right = st.columns(2)
 
     with left:
+
         st.subheader("Détections par scanner")
 
         scanner_counts = count_values(
@@ -325,6 +714,7 @@ with tab_overview:
             st.info("Aucune donnée.")
 
     with right:
+
         st.subheader("Détections par type")
 
         type_counts = count_values(
@@ -336,6 +726,8 @@ with tab_overview:
             st.bar_chart(type_counts)
         else:
             st.info("Aucune donnée.")
+
+    st.divider()
 
     st.subheader("Résultats par cible")
 
@@ -353,13 +745,20 @@ with tab_overview:
             if column in findings.columns
         ]
 
-        grouped = (
-            findings.groupby(group_columns)
-            .size()
-            .reset_index(name="observations")
-        )
+        if group_columns:
 
-        show_dataframe(grouped)
+            grouped = (
+                findings.groupby(
+                    group_columns,
+                    dropna=False,
+                )
+                .size()
+                .reset_index(
+                    name="observations"
+                )
+            )
+
+            show_dataframe(grouped)
 
 
 # ============================================================
@@ -371,77 +770,74 @@ with tab_gt:
     st.header("🎯 Référentiel Ground Truth")
 
     st.caption(
-        "Référentiel indépendant utilisé pour évaluer "
-        "les résultats des scanners."
+        "Référentiel indépendant servant de base "
+        "à l'évaluation des outils de sécurité."
     )
 
     # --------------------------------------------------------
     # Statistiques
     # --------------------------------------------------------
 
+    validated_count = count_validations(gt)
+
+    pending_count = count_pending(gt)
+
     gt_stats = st.columns(4)
 
-    with gt_stats[0]:
-        show_metric(len(gt), "Références")
+    metric_card(
+        gt_stats[0],
+        "Références",
+        len(gt),
+    )
 
-    with gt_stats[1]:
-        show_metric(
-            len(validation_log),
-            "Validations enregistrées",
-        )
+    metric_card(
+        gt_stats[1],
+        "Validations enregistrées",
+        validated_count,
+        "Nombre de références ayant un statut confirmé.",
+    )
 
-    with gt_stats[2]:
-        show_metric(
-            len(high_review_validation),
-            "Groupes HIGH",
-        )
+    metric_card(
+        gt_stats[2],
+        "À examiner",
+        pending_count,
+    )
 
-    with gt_stats[3]:
-        show_metric(
-            len(candidates),
-            "Observations candidates",
-        )
-
-    if not gt.empty and "verification_status" in gt.columns:
-        st.subheader("État de validation du référentiel")
-        status_counts = count_values(gt, "verification_status")
-        st.dataframe(status_counts.rename("Nombre").rename_axis("Statut").reset_index(), width="stretch", hide_index=True)
-        st.caption("Une entrée REVIEW_REQUIRED n'est jamais utilisée pour calculer TP/FP/FN.")
-
-    # --------------------------------------------------------
-    # Répartition des décisions
-    # --------------------------------------------------------
-
-    st.subheader("Répartition des décisions")
-
-    if not validation_log.empty and "decision" in validation_log.columns:
-
-        decisions = count_values(
-            validation_log,
-            "decision",
-        )
-
-        col1, col2 = st.columns([2, 1])
-
-        with col1:
-            st.bar_chart(decisions)
-
-        with col2:
-            st.dataframe(
-                decisions.rename("Nombre").rename_axis(
-    "Décision"
-).reset_index(),
-                width="stretch",
-                hide_index=True,
-            )
-
-    else:
-        st.info(
-            "Aucune décision de validation disponible."
-        )
+    metric_card(
+        gt_stats[3],
+        "Entrées dans le journal",
+        len(validation_log),
+        "Nombre d'événements de validation, pas le nombre de références validées.",
+    )
 
     # --------------------------------------------------------
-    # Références Ground Truth
+    # État du référentiel
+    # --------------------------------------------------------
+
+    st.divider()
+
+    st.subheader("État de validation")
+
+    if not gt.empty:
+
+        status_counts = count_values(
+            gt,
+            "verification_status",
+        )
+
+        st.bar_chart(status_counts)
+
+        status_table = (
+            status_counts
+            .rename("Nombre")
+            .rename_axis("Statut")
+            .reset_index()
+        )
+
+        show_dataframe(status_table)
+
+    # --------------------------------------------------------
+    # Filtres
     # --------------------------------------------------------
 
     st.divider()
@@ -450,50 +846,94 @@ with tab_gt:
 
     if not gt.empty:
 
-        gt_filters = st.columns(3)
+        filters = st.columns(4)
 
-        with gt_filters[0]:
-            scanners = sorted(gt["scanner"].unique())
+        scanner_options = sorted(
+            gt["expected_scanner"]
+            .replace("", "Non spécifié")
+            .unique()
+        )
+
+        category_options = sorted(
+            gt["category"]
+            .replace("", "Non spécifiée")
+            .unique()
+        )
+
+        status_options = sorted(
+            gt["verification_status"]
+            .unique()
+        )
+
+        scope_options = sorted(
+            gt["scope"]
+            .replace("", "Non spécifié")
+            .unique()
+        )
+
+        with filters[0]:
 
             selected_scanner = st.selectbox(
                 "Scanner",
-                ["Tous"] + scanners,
-                key="gt_scanner",
+                ["Tous"] + scanner_options,
+                key="filter_gt_scanner",
             )
 
-        with gt_filters[1]:
-            types = sorted(gt["finding_type"].unique())
+        with filters[1]:
 
-            selected_type = st.selectbox(
-                "Type",
-                ["Tous"] + types,
-                key="gt_type",
+            selected_category = st.selectbox(
+                "Catégorie",
+                ["Toutes"] + category_options,
+                key="filter_gt_category",
             )
 
-        with gt_filters[2]:
-            scopes = sorted(gt["scope"].unique())
+        with filters[2]:
+
+            selected_status = st.selectbox(
+                "Statut",
+                ["Tous"] + status_options,
+                key="filter_gt_status",
+            )
+
+        with filters[3]:
 
             selected_scope = st.selectbox(
                 "Périmètre",
-                ["Tous"] + scopes,
-                key="gt_scope",
+                ["Tous"] + scope_options,
+                key="filter_gt_scope",
             )
 
         gt_view = gt.copy()
 
         if selected_scanner != "Tous":
+
             gt_view = gt_view[
-                gt_view["scanner"] == selected_scanner
+                gt_view["expected_scanner"].replace(
+                    "", "Non spécifié"
+                ) == selected_scanner
             ]
 
-        if selected_type != "Tous":
+        if selected_category != "Toutes":
+
             gt_view = gt_view[
-                gt_view["finding_type"] == selected_type
+                gt_view["category"].replace(
+                    "", "Non spécifiée"
+                ) == selected_category
+            ]
+
+        if selected_status != "Tous":
+
+            gt_view = gt_view[
+                gt_view["verification_status"]
+                == selected_status
             ]
 
         if selected_scope != "Tous":
+
             gt_view = gt_view[
-                gt_view["scope"] == selected_scope
+                gt_view["scope"].replace(
+                    "", "Non spécifié"
+                ) == selected_scope
             ]
 
         st.caption(
@@ -501,7 +941,22 @@ with tab_gt:
             f"sur {len(gt)}."
         )
 
-        show_dataframe(gt_view)
+        display_columns = [
+            "gt_id",
+            "category",
+            "subcategory",
+            "expected_scanner",
+            "component",
+            "installed_version",
+            "advisory_id",
+            "expected_rule_id",
+            "verification_status",
+            "application_applicability",
+        ]
+
+        show_dataframe(
+            gt_view[display_columns]
+        )
 
         show_download(
             gt_view,
@@ -510,19 +965,23 @@ with tab_gt:
         )
 
     else:
+
         st.warning(
-            "Le fichier ground-truth.csv est vide ou absent."
+            "Le fichier Ground Truth est vide ou absent."
         )
 
     # --------------------------------------------------------
-    # Journal de validation
+    # Journal
     # --------------------------------------------------------
 
     st.divider()
 
-    st.subheader("📝 Journal de validation")
+    st.subheader("📝 Historique des validations")
 
-    show_dataframe(validation_log)
+    show_dataframe(
+        validation_log,
+        "Aucune validation enregistrée.",
+    )
 
     show_download(
         validation_log,
@@ -534,205 +993,367 @@ with tab_gt:
     # Méthodologie
     # --------------------------------------------------------
 
-    st.divider()
+    methodology_path = gt_dir / "methodology.md"
 
-    with st.expander("📖 Consulter la méthodologie"):
+    with st.expander("📖 Méthodologie"):
 
-        st.markdown(methodology)
+        if methodology_path.exists():
 
-
-# ============================================================
-# ONGLET 3 : VALIDATION DES VULNÉRABILITÉS
-# ============================================================
-
-with tab_review:
-
-    st.header("🔍 Validation des vulnérabilités")
-
-    st.caption(
-        "Examen des vulnérabilités Trivy et suivi "
-        "de leur validation indépendante."
-    )
-
-    # --------------------------------------------------------
-    # Statistiques HIGH
-    # --------------------------------------------------------
-
-    review_stats = st.columns(4)
-
-    with review_stats[0]:
-        show_metric(
-            len(high_review),
-            "Groupes HIGH",
-        )
-
-    with review_stats[1]:
-        show_metric(
-            len(high_review_validation),
-            "Groupes à valider",
-        )
-
-    with review_stats[2]:
-        if (
-            not high_review_validation.empty
-            and "verification_status" in high_review_validation.columns
-        ):
-            pending = (
-                high_review_validation["verification_status"]
-                == "REVIEW_REQUIRED"
-            ).sum()
-        else:
-            pending = 0
-
-        show_metric(
-            int(pending),
-            "À examiner",
-        )
-
-    with review_stats[3]:
-        if (
-            not high_review_validation.empty
-            and "verification_status" in high_review_validation.columns
-        ):
-            verified = (
-                high_review_validation["verification_status"]
-                != "REVIEW_REQUIRED"
-            ).sum()
-        else:
-            verified = 0
-
-        show_metric(
-            int(verified),
-            "Statuts renseignés",
-        )
-
-    # --------------------------------------------------------
-    # Filtrage des groupes HIGH
-    # --------------------------------------------------------
-
-    st.subheader("Groupes HIGH à examiner")
-
-    if not high_review_validation.empty:
-
-        review_view = high_review_validation.copy()
-
-        filter_columns = st.columns(3)
-
-        if "ecosystem" in review_view.columns:
-
-            with filter_columns[0]:
-
-                ecosystem_options = sorted(
-                    review_view["ecosystem"].unique()
+            st.markdown(
+                methodology_path.read_text(
+                    encoding="utf-8"
                 )
-
-                selected_ecosystem = st.selectbox(
-                    "Écosystème",
-                    ["Tous"] + ecosystem_options,
-                )
-
-                if selected_ecosystem != "Tous":
-                    review_view = review_view[
-                        review_view["ecosystem"]
-                        == selected_ecosystem
-                    ]
-
-        if "verification_status" in review_view.columns:
-
-            with filter_columns[1]:
-
-                status_options = sorted(
-                    review_view["verification_status"].unique()
-                )
-
-                selected_status = st.selectbox(
-                    "Statut",
-                    ["Tous"] + status_options,
-                )
-
-                if selected_status != "Tous":
-                    review_view = review_view[
-                        review_view["verification_status"]
-                        == selected_status
-                    ]
-
-        if "package" in review_view.columns:
-
-            with filter_columns[2]:
-
-                package_options = sorted(
-                    review_view["package"].unique()
-                )
-
-                selected_package = st.selectbox(
-                    "Package",
-                    ["Tous"] + package_options,
-                )
-
-                if selected_package != "Tous":
-                    review_view = review_view[
-                        review_view["package"]
-                        == selected_package
-                    ]
-
-        st.caption(
-            f"{len(review_view)} groupe(s) affiché(s)."
-        )
-
-        show_dataframe(review_view)
-
-        show_download(
-            review_view,
-            "high-review-filtered.csv",
-            "⬇️ Télécharger les groupes filtrés",
-        )
-
-    else:
-        st.warning(
-            "Le fichier high-review-to-validate.csv "
-            "est absent ou vide."
-        )
-
-    # --------------------------------------------------------
-    # Autres observations Trivy
-    # --------------------------------------------------------
-
-    st.divider()
-
-    st.subheader("Autres observations candidates")
-
-    if not candidates.empty:
-
-        st.caption(
-            f"{len(candidates)} observations Trivy."
-        )
-
-        if "severity" in candidates.columns:
-
-            severity_filter = st.multiselect(
-                "Filtrer par sévérité",
-                sorted(candidates["severity"].unique()),
-                default=sorted(candidates["severity"].unique()),
             )
 
-            candidate_view = candidates[
-                candidates["severity"].isin(severity_filter)
-            ]
-
         else:
-            candidate_view = candidates
 
-        show_dataframe(candidate_view)
+            st.info(
+                "Fichier methodology.md indisponible."
+            )
 
-        show_download(
-            candidate_view,
-            "trivy-review-filtered.csv",
-            "⬇️ Télécharger les observations",
+
+# ============================================================
+# ONGLET 3 : VALIDATION
+# ============================================================
+
+with tab_validation:
+
+    st.header("✍️ Validation des références")
+
+    st.caption(
+        "Examine une référence, puis enregistre "
+        "une décision indépendante."
+    )
+
+    st.info(
+        "Une référence ne doit être confirmée que si "
+        "sa décision repose sur des éléments vérifiables. "
+        "Une détection d'un scanner ne constitue pas, "
+        "à elle seule, une preuve de vulnérabilité."
+    )
+
+    if gt.empty:
+
+        st.warning(
+            "Aucune référence disponible pour validation."
         )
 
     else:
-        st.info(
-            "Aucune observation candidate disponible."
+
+        # ----------------------------------------------------
+        # Sélection de la référence
+        # ----------------------------------------------------
+
+        gt_records = gt.to_dict(
+            orient="records"
+        )
+
+        gt_by_id = {
+            row["gt_id"]: row
+            for row in gt_records
+        }
+
+        def format_gt_option(gt_id):
+
+            row = gt_by_id[gt_id]
+
+            component = (
+                row["component"]
+                or "Composant inconnu"
+            )
+
+            advisory = (
+                row["advisory_id"]
+                or row["expected_rule_id"]
+                or "Sans identifiant"
+            )
+
+            status = row["verification_status"]
+
+            return (
+                f"{gt_id} · {component} · "
+                f"{advisory} · {status}"
+            )
+
+        selected_gt_id = st.selectbox(
+            "Référence à examiner",
+            list(gt_by_id.keys()),
+            format_func=format_gt_option,
+            key="selected_gt_id",
+        )
+
+        selected_row = gt_by_id[
+            selected_gt_id
+        ]
+
+        # ----------------------------------------------------
+        # Informations sur la référence
+        # ----------------------------------------------------
+
+        st.divider()
+
+        st.subheader("Informations de la référence")
+
+        info1, info2, info3 = st.columns(3)
+
+        with info1:
+
+            st.write("**Identifiant**")
+
+            st.write(
+                selected_row["gt_id"]
+            )
+
+            st.write("**Catégorie**")
+
+            st.write(
+                selected_row["category"]
+            )
+
+        with info2:
+
+            st.write("**Scanner attendu**")
+
+            st.write(
+                selected_row["expected_scanner"]
+            )
+
+            st.write("**Composant**")
+
+            st.write(
+                selected_row["component"]
+            )
+
+        with info3:
+
+            st.write("**Advisory / règle**")
+
+            st.write(
+                selected_row["advisory_id"]
+                or selected_row["expected_rule_id"]
+                or "Non renseigné"
+            )
+
+            st.write("**Version installée**")
+
+            st.write(
+                selected_row["installed_version"]
+            )
+
+        with st.expander("Détails supplémentaires"):
+
+            st.write(
+                "**Description :**",
+                selected_row["expected_finding"],
+            )
+
+            st.write(
+                "**Cible :**",
+                selected_row["target"],
+            )
+
+            st.write(
+                "**Scope :**",
+                selected_row["scope"],
+            )
+
+            st.write(
+                "**Artifact :**",
+                selected_row["artifact"],
+            )
+
+            st.write(
+                "**Applicabilité :**",
+                selected_row["application_applicability"],
+            )
+
+        # ----------------------------------------------------
+        # Formulaire de validation
+        # ----------------------------------------------------
+
+        st.divider()
+
+        st.subheader("Décision de validation")
+
+        current_status = selected_row[
+            "verification_status"
+        ]
+
+        with st.form(
+            key=f"validation_form_{selected_gt_id}"
+        ):
+
+            decision = st.selectbox(
+                "Nouveau statut",
+                VALID_STATUSES,
+                index=VALID_STATUSES.index(
+                    current_status
+                ),
+                format_func=lambda value: {
+                    "REVIEW_REQUIRED": "À examiner",
+                    "CONFIRMED_AFFECTED": "Vulnérabilité confirmée",
+                    "CONFIRMED_NOT_AFFECTED": "Non affecté / faux positif confirmé",
+                }[value],
+            )
+
+            evidence = st.text_input(
+                "Référence de preuve",
+                value=selected_row["evidence_reference"],
+                placeholder="URL, rapport, commit, documentation...",
+                help=(
+                    "Indique la source qui justifie "
+                    "ta décision."
+                ),
+            )
+
+            notes = st.text_area(
+                "Notes de validation",
+                value=selected_row["notes"],
+                placeholder="Explique brièvement la décision...",
+            )
+
+            reviewer = st.text_input(
+                "Validateur",
+                placeholder="Nom ou identifiant du validateur",
+            )
+
+            submitted = st.form_submit_button(
+                "💾 Enregistrer la validation",
+                use_container_width=True,
+            )
+
+        if submitted:
+
+            if decision in VALIDATED_STATUSES and not evidence.strip():
+
+                st.error(
+                    "Une référence de preuve est obligatoire "
+                    "pour confirmer une décision."
+                )
+
+            else:
+
+                previous_status = current_status
+
+                # --------------------------------------------
+                # Modifier le Ground Truth
+                # --------------------------------------------
+
+                row_index = gt.index[
+                    gt["gt_id"] == selected_gt_id
+                ][0]
+
+                gt.loc[
+                    row_index,
+                    "verification_status",
+                ] = decision
+
+                gt.loc[
+                    row_index,
+                    "evidence_reference",
+                ] = evidence.strip()
+
+                gt.loc[
+                    row_index,
+                    "notes",
+                ] = notes.strip()
+
+                try:
+
+                    # ----------------------------------------
+                    # Sauvegarder le CSV V2
+                    # ----------------------------------------
+
+                    save_ground_truth(
+                        gt,
+                        gt_path,
+                    )
+
+                    # ----------------------------------------
+                    # Ajouter une entrée au journal
+                    # ----------------------------------------
+
+                    append_validation_log(
+                        {
+                            "timestamp_utc": datetime.now(
+                                timezone.utc
+                            ).isoformat(),
+
+                            "gt_id": selected_gt_id,
+
+                            "component": selected_row["component"],
+
+                            "advisory_id": (
+                                selected_row["advisory_id"]
+                            ),
+
+                            "previous_status": previous_status,
+
+                            "decision": decision,
+
+                            "reviewer": reviewer.strip(),
+
+                            "evidence_reference": evidence.strip(),
+
+                            "notes": notes.strip(),
+                        },
+                        log_path,
+                    )
+
+                    st.success(
+                        "Validation enregistrée dans le Ground Truth V2."
+                    )
+
+                    st.rerun()
+
+                except (OSError, ValueError) as exc:
+
+                    st.error(
+                        f"Erreur pendant la sauvegarde : {exc}"
+                    )
+
+    # --------------------------------------------------------
+    # Résumé de validation
+    # --------------------------------------------------------
+
+    st.divider()
+
+    st.subheader("Progression des validations")
+
+    progress_columns = st.columns(3)
+
+    total = len(gt)
+
+    validated = count_validations(gt)
+
+    pending = count_pending(gt)
+
+    metric_card(
+        progress_columns[0],
+        "Total",
+        total,
+    )
+
+    metric_card(
+        progress_columns[1],
+        "Confirmées",
+        validated,
+    )
+
+    metric_card(
+        progress_columns[2],
+        "À examiner",
+        pending,
+    )
+
+    if total > 0:
+
+        st.progress(
+            validated / total,
+            text=(
+                f"{validated} référence(s) validée(s) "
+                f"sur {total} ({validated / total:.1%})"
+            ),
         )
 
 
@@ -740,32 +1361,79 @@ with tab_review:
 # ONGLET 4 : RÉSULTATS DES SCANNERS
 # ============================================================
 
-with tab_findings:
+with tab_scanners:
 
     st.header("🛡️ Résultats des scanners")
+
+    # --------------------------------------------------------
+    # Métriques expérimentales
+    # --------------------------------------------------------
 
     st.subheader("Métriques expérimentales")
 
     if not metrics.get("available"):
-        st.warning(metrics.get("reason", "Aucune entrée Ground Truth vérifiée."))
-    else:
-        if not metrics.get("complete"):
-            st.warning(
-                "Évaluation partielle : les détections non examinées ne sont pas classées FP. "
-                "Le Recall et le F1 globaux restent désactivés tant que l'exhaustivité du périmètre n'est pas démontrée."
+
+        st.warning(
+            metrics.get(
+                "reason",
+                "Aucune référence Ground Truth vérifiée.",
             )
-        metric_df = pd.DataFrame(metrics.get("by_scanner", []))
+        )
+
+    else:
+
+        if not metrics.get("complete"):
+
+            st.warning(
+                "Évaluation partielle : le Recall et le F1 "
+                "ne sont pas calculés tant que l'exhaustivité "
+                "du Ground Truth n'est pas justifiée."
+            )
+
+        metric_df = pd.DataFrame(
+            metrics.get("by_scanner", [])
+        )
+
         if metric_df.empty:
-            st.info("Aucune métrique exploitable.")
+
+            st.info(
+                "Aucune métrique disponible."
+            )
+
         else:
-            st.dataframe(metric_df, width="stretch", hide_index=True)
-            chart_columns = ["precision_reviewed_sample"]
+
+            show_dataframe(metric_df)
+
+            chart_columns = [
+                "precision_reviewed_sample"
+            ]
+
             if metrics.get("complete"):
-                chart_columns.extend(["recall", "f1"])
-            chart_df = metric_df.set_index("scanner")[chart_columns].dropna(how="all")
-            if not chart_df.empty:
-                st.subheader("Mesures sur les références examinées")
-                st.bar_chart(chart_df)
+
+                chart_columns.extend([
+                    "recall",
+                    "f1",
+                ])
+
+            available_columns = [
+                column
+                for column in chart_columns
+                if column in metric_df.columns
+            ]
+
+            if available_columns:
+
+                chart_df = metric_df.set_index(
+                    "scanner"
+                )[available_columns]
+
+                if not chart_df.empty:
+
+                    st.subheader(
+                        "Mesures expérimentales"
+                    )
+
+                    st.bar_chart(chart_df)
 
     # --------------------------------------------------------
     # Observations normalisées
@@ -775,10 +1443,13 @@ with tab_findings:
 
     st.subheader("Observations normalisées")
 
-    if not findings.empty:
+    if not findings.empty and "scanner" in findings.columns:
 
         scanner_options = sorted(
-            findings["scanner"].unique().tolist()
+            findings["scanner"]
+            .dropna()
+            .unique()
+            .tolist()
         )
 
         selected_scanners = st.multiselect(
@@ -788,18 +1459,25 @@ with tab_findings:
         )
 
         findings_view = findings[
-            findings["scanner"].isin(selected_scanners)
+            findings["scanner"].isin(
+                selected_scanners
+            )
         ]
+
+        st.caption(
+            f"{len(findings_view)} observation(s) affichée(s)."
+        )
 
         show_dataframe(findings_view)
 
         show_download(
             findings_view,
             "royal67-normalized-findings.csv",
-            "⬇️ Télécharger les observations CSV",
+            "⬇️ Télécharger les observations",
         )
 
     else:
+
         st.info(
             "Aucune observation normalisée disponible."
         )

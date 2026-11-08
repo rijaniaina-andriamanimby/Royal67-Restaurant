@@ -42,10 +42,10 @@ VALID_STATUSES = {
 # Correspondance entre les catégories Ground Truth et les
 # finding_type produits par les parsers.
 CATEGORY_FINDING_TYPES = {
-    "SCA": {"vulnerability"},
-    "SAST": {"sast", "code", "semgrep"},
-    "CONTAINER": {"misconfiguration", "config", "vulnerability"},
-    "APPLICATION": {"application", "manual"},
+    "sca": {"vulnerability"},
+    "sast": {"sast", "code", "semgrep"},
+    "container": {"misconfiguration", "config", "vulnerability"},
+    "application": {"application", "manual"},
 }
 
 
@@ -106,31 +106,104 @@ def load_ground_truth(path: str | Path) -> pd.DataFrame:
         encoding="utf-8-sig",
     )
 
-    missing = [
-        column
-        for column in GT_COLUMNS
-        if column not in frame.columns
-    ]
+    # --------------------------------------------------------
+    # 1. Détection et conversion de l'ancien format
+    # --------------------------------------------------------
 
-    if missing:
-        raise ValueError(
-            "Colonnes manquantes dans le Ground Truth V2 : "
-            + ", ".join(missing)
+    legacy_columns = {
+        "scanner",
+        "finding_id",
+        "package",
+    }
+
+    is_legacy = (
+        bool(legacy_columns.intersection(frame.columns))
+        and "expected_scanner" not in frame.columns
+    )
+
+    if is_legacy:
+
+        # Correspondance des anciennes colonnes vers V2.
+        rename_map = {
+            "scanner": "expected_scanner",
+            "finding_id": "advisory_id",
+            "package": "component",
+            "rationale": "notes",
+        }
+
+        frame = frame.rename(columns=rename_map)
+
+        # Génération d'identifiants pour les anciennes lignes.
+        if "gt_id" not in frame.columns:
+            frame["gt_id"] = [
+                f"LEGACY-{i:04d}"
+                for i in range(1, len(frame) + 1)
+            ]
+
+        # Détermination de la catégorie.
+        if "category" not in frame.columns:
+
+            def infer_category(row):
+                finding_type = normalize(
+                    row.get("finding_type")
+                )
+
+                scanner = normalize_scanner(
+                    row.get("expected_scanner")
+                )
+
+                if finding_type == "vulnerability":
+                    return "SCA"
+
+                if scanner == "semgrep":
+                    return "SAST"
+
+                if finding_type in {
+                    "misconfiguration",
+                    "config",
+                }:
+                    return "CONTAINER"
+
+                return "APPLICATION"
+
+            frame["category"] = frame.apply(
+                infer_category,
+                axis=1,
+            )
+
+        # Une ancienne référence n'est jamais considérée
+        # comme validée automatiquement.
+        frame["verification_status"] = "REVIEW_REQUIRED"
+
+        print(
+            "[Ground Truth] Ancien format détecté : "
+            "conversion vers V2 effectuée."
         )
+
+    # --------------------------------------------------------
+    # 2. Compléter les colonnes V2 absentes
+    # --------------------------------------------------------
+
+    for column in GT_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = ""
 
     frame = frame[GT_COLUMNS].copy()
 
-    # Nettoyage des chaînes.
+    # --------------------------------------------------------
+    # 3. Nettoyage
+    # --------------------------------------------------------
+
     for column in GT_COLUMNS:
         frame[column] = frame[column].apply(clean)
 
-    # Normalisation des statuts.
     frame[STATUS_COLUMN] = (
         frame[STATUS_COLUMN]
         .str.upper()
         .str.strip()
     )
 
+    # Tout statut absent devient REVIEW_REQUIRED.
     frame.loc[
         frame[STATUS_COLUMN] == "",
         STATUS_COLUMN
@@ -146,7 +219,10 @@ def load_ground_truth(path: str | Path) -> pd.DataFrame:
             f"Valeurs autorisées : {sorted(VALID_STATUSES)}"
         )
 
-    # Vérification des identifiants.
+    # --------------------------------------------------------
+    # 4. Vérification des identifiants
+    # --------------------------------------------------------
+
     duplicated = frame[
         frame["gt_id"].duplicated(keep=False)
         & (frame["gt_id"] != "")
@@ -159,12 +235,15 @@ def load_ground_truth(path: str | Path) -> pd.DataFrame:
             f"Identifiants gt_id dupliqués : {ids}"
         )
 
-    # Une référence confirmée doit disposer d'un identifiant
-    # permettant de la rapprocher d'une détection.
+    # --------------------------------------------------------
+    # 5. Validation des références confirmées
+    # --------------------------------------------------------
+
     confirmed = frame[
-        frame[STATUS_COLUMN].isin(
-            {"CONFIRMED_AFFECTED", "CONFIRMED_NOT_AFFECTED"}
-        )
+        frame[STATUS_COLUMN].isin({
+            "CONFIRMED_AFFECTED",
+            "CONFIRMED_NOT_AFFECTED",
+        })
     ]
 
     invalid_confirmed = []
@@ -173,18 +252,16 @@ def load_ground_truth(path: str | Path) -> pd.DataFrame:
 
         category = normalize(row["category"])
 
-        has_identifier = bool(
-            row["advisory_id"]
-            or row["expected_rule_id"]
-        )
-
-        if not has_identifier:
-            invalid_confirmed.append(row["gt_id"])
-
         if category == "sca" and not row["advisory_id"]:
             invalid_confirmed.append(row["gt_id"])
 
-        if category == "sast" and not row["expected_rule_id"]:
+        elif category == "sast" and not row["expected_rule_id"]:
+            invalid_confirmed.append(row["gt_id"])
+
+        elif not (
+            row["advisory_id"]
+            or row["expected_rule_id"]
+        ):
             invalid_confirmed.append(row["gt_id"])
 
     if invalid_confirmed:
