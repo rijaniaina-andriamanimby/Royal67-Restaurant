@@ -1,16 +1,22 @@
+# Image volontairement simplifiée pour le laboratoire
 FROM node:22-alpine
 
-ENV NODE_ENV=production
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Mauvaise pratique pédagogique : ne pas utiliser le lockfile
+COPY package.json ./
+RUN npm install --no-package-lock --no-audit --no-fund \
+    && npm cache clean --force
 
-COPY --chown=node:node . .
+COPY . .
 
-USER node
+# Mauvaise pratique : l'application tourne en root
+USER root
+
+ENV NODE_ENV=development
+ENV PORT=8000
+
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
-  CMD node -e "const p=process.env.PORT||8000; fetch('http://127.0.0.1:'+p+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
+# Démarrage direct de l'application
 CMD ["node", "index.js"]

@@ -1,1 +1,1 @@
-scanner,finding_type,finding_id,package,installed_version,target,scope,artifact,rationale
+gt_id,app_version_or_commit,category,subcategory,expected_scanner,component,installed_version,advisory_id,scope,target,artifact,location_or_line,expected_rule_id,expected_finding,verification_status,application_applicability,evidence_reference,notes

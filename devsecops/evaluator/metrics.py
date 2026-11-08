@@ -1,48 +1,369 @@
+
 from __future__ import annotations
 
 from pathlib import Path
 import pandas as pd
 
 
-GT_COLUMNS = [
-    "scanner", "finding_type", "finding_id", "package",
-    "installed_version", "target", "scope", "artifact", "rationale",
-]
-STATUS_COLUMN = "verification_status"
-VALID_STATUSES = {"CONFIRMED_AFFECTED", "CONFIRMED_NOT_AFFECTED", "REVIEW_REQUIRED"}
+# ============================================================
+# GROUND TRUTH V2 : SCHEMA
+# ============================================================
 
+GT_COLUMNS = [
+    "gt_id",
+    "app_version_or_commit",
+    "category",
+    "subcategory",
+    "expected_scanner",
+    "component",
+    "installed_version",
+    "advisory_id",
+    "scope",
+    "target",
+    "artifact",
+    "location_or_line",
+    "expected_rule_id",
+    "expected_finding",
+    "verification_status",
+    "application_applicability",
+    "evidence_reference",
+    "notes",
+]
+
+STATUS_COLUMN = "verification_status"
+
+VALID_STATUSES = {
+    "CONFIRMED_AFFECTED",
+    "CONFIRMED_NOT_AFFECTED",
+    "REVIEW_REQUIRED",
+}
+
+
+# Correspondance entre les catégories Ground Truth et les
+# finding_type produits par les parsers.
+CATEGORY_FINDING_TYPES = {
+    "SCA": {"vulnerability"},
+    "SAST": {"sast", "code", "semgrep"},
+    "CONTAINER": {"misconfiguration", "config", "vulnerability"},
+    "APPLICATION": {"application", "manual"},
+}
+
+
+# ============================================================
+# NORMALISATION DES VALEURS
+# ============================================================
+
+def clean(value) -> str:
+    """Convertit une valeur en chaîne propre."""
+    if value is None:
+        return ""
+
+    if pd.isna(value):
+        return ""
+
+    return str(value).strip()
+
+
+def normalize(value) -> str:
+    """Normalisation pour les comparaisons."""
+    return clean(value).lower()
+
+
+def normalize_scanner(value) -> str:
+    """Normalise les noms des scanners."""
+
+    scanner = normalize(value)
+
+    if "semgrep" in scanner:
+        return "semgrep"
+
+    if "trivy" in scanner:
+        return "trivy"
+
+    if scanner in {"manual", "manuel", "controle manuel"}:
+        return "manual"
+
+    return scanner
+
+
+# ============================================================
+# CHARGEMENT DU GROUND TRUTH V2
+# ============================================================
 
 def load_ground_truth(path: str | Path) -> pd.DataFrame:
-    frame = pd.read_csv(path, dtype=str, keep_default_na=False)
-    missing = [column for column in GT_COLUMNS if column not in frame.columns]
+
+    path = Path(path)
+
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Fichier Ground Truth introuvable : {path}"
+        )
+
+    frame = pd.read_csv(
+        path,
+        dtype=str,
+        keep_default_na=False,
+        encoding="utf-8-sig",
+    )
+
+    missing = [
+        column
+        for column in GT_COLUMNS
+        if column not in frame.columns
+    ]
+
     if missing:
-        raise ValueError(f"Colonnes manquantes dans la ground truth : {', '.join(missing)}")
+        raise ValueError(
+            "Colonnes manquantes dans le Ground Truth V2 : "
+            + ", ".join(missing)
+        )
 
-    # Legacy rows are deliberately unverified until explicitly reviewed.
-    if STATUS_COLUMN not in frame.columns:
-        frame[STATUS_COLUMN] = "REVIEW_REQUIRED"
-    frame[STATUS_COLUMN] = frame[STATUS_COLUMN].fillna("").str.strip().str.upper()
-    frame.loc[frame[STATUS_COLUMN] == "", STATUS_COLUMN] = "REVIEW_REQUIRED"
-    invalid = sorted(set(frame[STATUS_COLUMN]) - VALID_STATUSES)
+    frame = frame[GT_COLUMNS].copy()
+
+    # Nettoyage des chaînes.
+    for column in GT_COLUMNS:
+        frame[column] = frame[column].apply(clean)
+
+    # Normalisation des statuts.
+    frame[STATUS_COLUMN] = (
+        frame[STATUS_COLUMN]
+        .str.upper()
+        .str.strip()
+    )
+
+    frame.loc[
+        frame[STATUS_COLUMN] == "",
+        STATUS_COLUMN
+    ] = "REVIEW_REQUIRED"
+
+    invalid = sorted(
+        set(frame[STATUS_COLUMN]) - VALID_STATUSES
+    )
+
     if invalid:
-        raise ValueError(f"Statuts Ground Truth invalides : {invalid}. Valeurs permises : {sorted(VALID_STATUSES)}")
+        raise ValueError(
+            f"Statuts Ground Truth invalides : {invalid}. "
+            f"Valeurs autorisées : {sorted(VALID_STATUSES)}"
+        )
 
-    for column in ("scanner", "finding_type", "finding_id", "package", "installed_version", "target", "scope", "artifact"):
-        frame[column] = frame[column].astype(str).str.strip()
+    # Vérification des identifiants.
+    duplicated = frame[
+        frame["gt_id"].duplicated(keep=False)
+        & (frame["gt_id"] != "")
+    ]
+
+    if not duplicated.empty:
+        ids = duplicated["gt_id"].tolist()
+
+        raise ValueError(
+            f"Identifiants gt_id dupliqués : {ids}"
+        )
+
+    # Une référence confirmée doit disposer d'un identifiant
+    # permettant de la rapprocher d'une détection.
+    confirmed = frame[
+        frame[STATUS_COLUMN].isin(
+            {"CONFIRMED_AFFECTED", "CONFIRMED_NOT_AFFECTED"}
+        )
+    ]
+
+    invalid_confirmed = []
+
+    for _, row in confirmed.iterrows():
+
+        category = normalize(row["category"])
+
+        has_identifier = bool(
+            row["advisory_id"]
+            or row["expected_rule_id"]
+        )
+
+        if not has_identifier:
+            invalid_confirmed.append(row["gt_id"])
+
+        if category == "sca" and not row["advisory_id"]:
+            invalid_confirmed.append(row["gt_id"])
+
+        if category == "sast" and not row["expected_rule_id"]:
+            invalid_confirmed.append(row["gt_id"])
+
+    if invalid_confirmed:
+        raise ValueError(
+            "Références confirmées sans identifiant de "
+            "correspondance valide : "
+            + ", ".join(sorted(set(invalid_confirmed)))
+        )
+
     return frame
 
 
-def _base_key(row: dict) -> tuple:
+# ============================================================
+# IDENTIFIANT DE CORRESPONDANCE
+# ============================================================
+
+def expected_identifier(row: dict) -> str:
+    """
+    SCA       -> advisory_id (CVE/GHSA)
+    SAST      -> expected_rule_id
+    CONTAINER -> expected_rule_id ou advisory_id
+    """
+
+    category = normalize(row.get("category"))
+
+    if category == "sca":
+        return clean(row.get("advisory_id"))
+
+    if category == "sast":
+        return clean(row.get("expected_rule_id"))
+
     return (
-        str(row.get("scanner", "")).strip().lower(),
-        str(row.get("finding_type", "")).strip().lower(),
-        str(row.get("finding_id", "")).strip(),
-        str(row.get("package", "")).strip().lower(),
-        str(row.get("installed_version", "")).strip(),
-        str(row.get("scope", "")).strip().lower(),
-        str(row.get("artifact", "")).strip(),
+        clean(row.get("expected_rule_id"))
+        or clean(row.get("advisory_id"))
     )
 
+
+def detected_identifier(row: dict) -> str:
+    return clean(row.get("finding_id"))
+
+
+# ============================================================
+# CORRESPONDANCE GROUND TRUTH / DETECTIONS
+# ============================================================
+
+def matches_category(
+    gt_row: dict,
+    finding_row: dict,
+) -> bool:
+
+    category = normalize(gt_row.get("category"))
+
+    allowed = CATEGORY_FINDING_TYPES.get(category)
+
+    if not allowed:
+        return False
+
+    detected_type = normalize(
+        finding_row.get("finding_type")
+    )
+
+    return detected_type in allowed
+
+
+def matches_target(
+    gt_row: dict,
+    finding_row: dict,
+) -> bool:
+    """
+    Le target V2 peut correspondre au target ou au path
+    normalisé du scanner.
+    """
+
+    expected = clean(gt_row.get("target"))
+
+    if not expected:
+        return True
+
+    possible_targets = {
+        clean(finding_row.get("target")),
+        clean(finding_row.get("path")),
+    }
+
+    observed = clean(
+        finding_row.get("observed_targets")
+    )
+
+    if observed:
+        possible_targets.update(
+            item.strip()
+            for item in observed.split(";")
+            if item.strip()
+        )
+
+    return expected in possible_targets
+
+
+def matches_reference(
+    gt_row: dict,
+    finding_row: dict,
+) -> bool:
+
+    # 1. Scanner
+    expected_scanner = normalize_scanner(
+        gt_row.get("expected_scanner")
+    )
+
+    detected_scanner = normalize_scanner(
+        finding_row.get("scanner")
+    )
+
+    if not expected_scanner or expected_scanner != detected_scanner:
+        return False
+
+    # Les contrôles manuels ne sont pas des détections automatiques.
+    if expected_scanner == "manual":
+        return False
+
+    # 2. Catégorie
+    if not matches_category(gt_row, finding_row):
+        return False
+
+    # 3. Identifiant CVE/GHSA ou règle Semgrep
+    expected_id = expected_identifier(gt_row)
+    detected_id = detected_identifier(finding_row)
+
+    if not expected_id or expected_id != detected_id:
+        return False
+
+    # 4. Composant / package
+    component = normalize(gt_row.get("component"))
+
+    detected_package = normalize(
+        finding_row.get("package")
+    )
+
+    if component and component != detected_package:
+        return False
+
+    # 5. Version installée
+    version = clean(gt_row.get("installed_version"))
+
+    detected_version = clean(
+        finding_row.get("installed_version")
+    )
+
+    if version and version != detected_version:
+        return False
+
+    # 6. Scope
+    scope = normalize(gt_row.get("scope"))
+
+    detected_scope = normalize(
+        finding_row.get("scope")
+    )
+
+    if scope and scope != detected_scope:
+        return False
+
+    # 7. Artifact
+    artifact = clean(gt_row.get("artifact"))
+
+    detected_artifact = clean(
+        finding_row.get("artifact")
+    )
+
+    if artifact and artifact != detected_artifact:
+        return False
+
+    # 8. Target
+    if not matches_target(gt_row, finding_row):
+        return False
+
+    return True
+
+
+# ============================================================
+# CALCUL DES METRIQUES
+# ============================================================
 
 def calculate_metrics(
     findings: pd.DataFrame,
@@ -51,103 +372,256 @@ def calculate_metrics(
     ground_truth_complete: bool = False,
 ) -> dict:
     """
-    Calculate metrics only on explicitly reviewed GT records.
+    Compare les détections normalisées au Ground Truth V2.
 
-    CONFIRMED_AFFECTED records contribute TP/FN.
-    CONFIRMED_NOT_AFFECTED records contribute FP only when detected.
-    Unreviewed detections are never silently counted as FP.
-    Recall/F1 are withheld unless the caller explicitly declares the GT
-    exhaustive for the declared evaluation scope.
+    CONFIRMED_AFFECTED :
+        Détection trouvée     -> TP
+        Détection non trouvée -> FN
+
+    CONFIRMED_NOT_AFFECTED :
+        Détection trouvée     -> FP
+        Détection non trouvée -> aucun FP
+
+    REVIEW_REQUIRED :
+        Ignoré dans les métriques.
+
+    IMPORTANT :
+        Le Recall et le F1 ne sont calculés que si le Ground
+        Truth est déclaré exhaustif pour le périmètre évalué.
     """
+
     unavailable = {
-        "available": False, "complete": False,
+        "available": False,
+        "complete": False,
         "reason": "Ground Truth indépendante absente ou vide.",
         "by_scanner": [],
     }
+
     if ground_truth is None or ground_truth.empty:
         return unavailable
 
-    required = ["scanner", "finding_type", "finding_id", "package", "installed_version", "scope", "artifact", "target"]
-    missing = [column for column in required if column not in findings.columns]
+    required_findings = [
+        "scanner",
+        "finding_type",
+        "finding_id",
+        "package",
+        "installed_version",
+        "target",
+        "path",
+        "scope",
+        "artifact",
+    ]
+
+    missing = [
+        column
+        for column in required_findings
+        if column not in findings.columns
+    ]
+
     if missing:
-        raise ValueError(f"Colonnes manquantes dans les détections : {missing}")
+        raise ValueError(
+            "Colonnes manquantes dans les détections : "
+            + ", ".join(missing)
+        )
 
     gt = ground_truth.copy()
-    if STATUS_COLUMN not in gt.columns:
-        gt[STATUS_COLUMN] = "REVIEW_REQUIRED"
-    gt[STATUS_COLUMN] = gt[STATUS_COLUMN].fillna("").astype(str).str.strip().str.upper()
-    gt.loc[gt[STATUS_COLUMN] == "", STATUS_COLUMN] = "REVIEW_REQUIRED"
-    invalid = sorted(set(gt[STATUS_COLUMN]) - VALID_STATUSES)
-    if invalid:
-        raise ValueError(f"Statuts Ground Truth invalides : {invalid}")
-
     detected = findings.copy()
-    for column in required:
-        detected[column] = detected[column].fillna("").astype(str).str.strip()
+
+    # Normalisation des données de détection.
+    for column in required_findings:
+        detected[column] = (
+            detected[column]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+    # Support des données chargées directement par le dashboard.
+    for column in GT_COLUMNS:
+        if column not in gt.columns:
+            gt[column] = ""
+
+        gt[column] = gt[column].apply(clean)
+
+    gt[STATUS_COLUMN] = (
+        gt[STATUS_COLUMN]
+        .str.upper()
+        .str.strip()
+    )
+
+    gt.loc[
+        gt[STATUS_COLUMN] == "",
+        STATUS_COLUMN
+    ] = "REVIEW_REQUIRED"
+
+    invalid = sorted(
+        set(gt[STATUS_COLUMN]) - VALID_STATUSES
+    )
+
+    if invalid:
+        raise ValueError(
+            f"Statuts Ground Truth invalides : {invalid}"
+        )
+
+    # On ne peut pas mesurer les contrôles manuels avec
+    # les détections automatiques Semgrep/Trivy.
+    measurable_gt = gt[
+        gt["expected_scanner"].apply(normalize_scanner)
+        != "manual"
+    ].copy()
+
+    # Groupement par scanner et catégorie.
+    groups = sorted({
+        (
+            normalize_scanner(row["expected_scanner"]),
+            normalize(row["category"]).upper(),
+        )
+        for _, row in measurable_gt.iterrows()
+    })
 
     output = []
-    grouping = sorted({(str(r.scanner).lower(), str(r.finding_type).lower()) for r in gt.itertuples()})
-    for scanner, finding_type in grouping:
-        gt_part = gt[(gt.scanner.str.lower() == scanner) & (gt.finding_type.str.lower() == finding_type)]
-        det_part = detected[(detected.scanner.str.lower() == scanner) & (detected.finding_type.str.lower() == finding_type)]
 
-        detected_targets: dict[tuple, set[str]] = {}
-        for row in det_part.to_dict("records"):
-            base = _base_key(row)
-            targets = detected_targets.setdefault(base, set())
-            target = str(row.get("target", "")).strip()
-            if target:
-                targets.add(target)
-            observed = str(row.get("observed_targets", "")).strip()
-            if observed:
-                targets.update(item.strip() for item in observed.split(";") if item.strip())
+    for scanner, category in groups:
 
-        tp = fp = fn = 0
-        reviewed_positive = reviewed_negative = 0
-        matched_positive = matched_negative = 0
-        for row in gt_part.to_dict("records"):
-            status = str(row.get(STATUS_COLUMN, "REVIEW_REQUIRED")).strip().upper()
+        gt_part = measurable_gt[
+            measurable_gt["expected_scanner"].apply(
+                normalize_scanner
+            ) == scanner
+        ]
+
+        gt_part = gt_part[
+            gt_part["category"].apply(normalize) == category.lower()
+        ]
+
+        det_part = detected[
+            detected["scanner"].apply(normalize_scanner)
+            == scanner
+        ]
+
+        # Seules les références confirmées ou explicitement
+        # déclarées négatives participent aux calculs.
+        tp = 0
+        fp = 0
+        fn = 0
+
+        reviewed_positive = 0
+        reviewed_negative = 0
+
+        matched_positive = 0
+        matched_negative = 0
+
+        for _, gt_series in gt_part.iterrows():
+
+            gt_row = gt_series.to_dict()
+
+            status = normalize(
+                gt_row.get(STATUS_COLUMN)
+            ).upper()
+
             if status == "REVIEW_REQUIRED":
                 continue
-            base = _base_key(row)
-            target = str(row.get("target", "")).strip()
-            observed = detected_targets.get(base, set())
-            is_detected = bool(observed) and (not target or target in observed)
+
+            is_detected = any(
+                matches_reference(
+                    gt_row,
+                    finding_row,
+                )
+                for finding_row in det_part.to_dict("records")
+            )
 
             if status == "CONFIRMED_AFFECTED":
+
                 reviewed_positive += 1
+
                 if is_detected:
                     tp += 1
                     matched_positive += 1
                 else:
                     fn += 1
+
             elif status == "CONFIRMED_NOT_AFFECTED":
+
                 reviewed_negative += 1
+
                 if is_detected:
                     fp += 1
                     matched_negative += 1
 
-        precision = tp / (tp + fp) if reviewed_negative > 0 and (tp + fp) > 0 else None
-        recall = tp / (tp + fn) if ground_truth_complete and (tp + fn) > 0 else None
-        f1 = (2 * precision * recall / (precision + recall)) if precision is not None and recall is not None and precision + recall > 0 else None
+        # La précision est une précision sur l'échantillon
+        # explicitement examiné, pas une précision globale.
+        precision = (
+            tp / (tp + fp)
+            if reviewed_negative > 0 and (tp + fp) > 0
+            else None
+        )
+
+        recall = (
+            tp / (tp + fn)
+            if ground_truth_complete and (tp + fn) > 0
+            else None
+        )
+
+        f1 = None
+
+        if (
+            precision is not None
+            and recall is not None
+            and precision + recall > 0
+        ):
+            f1 = (
+                2 * precision * recall
+                / (precision + recall)
+            )
+
         output.append({
-            "scanner": scanner, "finding_type": finding_type,
-            "tp": tp, "fp": fp, "fn": fn,
+            "scanner": scanner,
+            "category": category,
+
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+
             "precision_reviewed_sample": precision,
-            "recall": recall, "f1": f1,
+            "recall": recall,
+            "f1": f1,
+
             "reviewed_positive": reviewed_positive,
             "reviewed_negative": reviewed_negative,
+
             "matched_positive": matched_positive,
             "matched_negative": matched_negative,
-            "unreviewed_gt": int((gt_part[STATUS_COLUMN] == "REVIEW_REQUIRED").sum()),
-            "detections_total": int(len(detected_targets)),
-            "ground_truth_complete": bool(ground_truth_complete),
+
+            "unreviewed_gt": int(
+                (
+                    gt_part[STATUS_COLUMN]
+                    == "REVIEW_REQUIRED"
+                ).sum()
+            ),
+
+            "detections_total": int(len(det_part)),
+
+            "ground_truth_complete": bool(
+                ground_truth_complete
+            ),
         })
 
-    has_reviewed = any(item["reviewed_positive"] + item["reviewed_negative"] > 0 for item in output)
+    has_reviewed = any(
+        item["reviewed_positive"] + item["reviewed_negative"] > 0
+        for item in output
+    )
+
     return {
         "available": has_reviewed,
         "complete": bool(ground_truth_complete),
-        "reason": "" if ground_truth_complete else "Résultats partiels : les détections non examinées ne sont pas classées FP et le Recall/F1 global est désactivé.",
+
+        "reason": (
+            ""
+            if ground_truth_complete
+            else (
+                "Résultats partiels : les références non vérifiées "
+                "sont ignorées et le Recall/F1 global est désactivé."
+            )
+        ),
+
         "by_scanner": output,
     }
