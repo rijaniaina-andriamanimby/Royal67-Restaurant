@@ -288,7 +288,7 @@ jobs:
           test -s reports/scans/trivy-fs-report.json
           test -s reports/scans/trivy-backend-image-report.json
           test -s reports/scans/trivy-frontend-image-report.json
-          test -s reports/ground-truth/ground-truth.csv
+          test -s reports/ground-truth/ground-truth-v2.csv
 
       - name: Evaluate current CI scan reports
         env:
@@ -303,7 +303,7 @@ jobs:
             --trivy reports/scans/trivy-fs-report.json \
             --trivy reports/scans/trivy-backend-image-report.json \
             --trivy reports/scans/trivy-frontend-image-report.json \
-            --ground-truth reports/ground-truth/ground-truth.csv \
+            --ground-truth reports/ground-truth/ground-truth-v2.csv \
             --output-dir reports/evaluation
 
       - name: Validate generated summary
