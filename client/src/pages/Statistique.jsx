@@ -90,7 +90,7 @@ const Statistique = () => {
         </div>
 
         {/* Sales Chart */}
-        <SalesByDayChart data={sales} />
+        <SalesByDayChart data={sales || 0} />
 
         {/* Category Chart
         <CategoryStatsChart data={categories} />
