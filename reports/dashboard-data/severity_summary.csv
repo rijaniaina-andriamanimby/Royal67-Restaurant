@@ -5,4 +5,4 @@ trivy,misconfiguration,LOW,1
 trivy,vulnerability,CRITICAL,3
 trivy,vulnerability,HIGH,55
 trivy,vulnerability,LOW,51
-trivy,vulnerability,MEDIUM,63
+trivy,vulnerability,MEDIUM,65

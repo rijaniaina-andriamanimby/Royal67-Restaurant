@@ -1,11 +1,11 @@
 {
   "project": "Royal67 Restaurant",
   "run_metadata": {
-    "generated_at_utc": "2026-11-06T19:54:05+00:00",
-    "commit_sha": "6cd2926dd45bebd6af046759f9f10ed87544dc5c",
+    "generated_at_utc": "2026-11-08T12:12:32+00:00",
+    "commit_sha": "42b0d59178aae340384a69782b5ee1398e4ddbc9",
     "branch": "devsecops/docker-ci",
-    "workflow_run_id": "42283443134",
-    "workflow_run_number": "14"
+    "workflow_run_id": "42479024935",
+    "workflow_run_number": "15"
   },
   "scan_metadata": [
     {
@@ -15,7 +15,7 @@
       "findings_reported": 1,
       "errors_count": 0,
       "errors": [],
-      "scanned_targets_count": 76,
+      "scanned_targets_count": 74,
       "scan_time_seconds": null
     },
     {
@@ -25,8 +25,8 @@
       "artifact": ".",
       "artifact_type": "repository",
       "scope": "filesystem",
-      "created_at": "2026-11-06T19:52:44.898964351Z",
-      "commit": "6cd2926dd45bebd6af046759f9f10ed87544dc5c",
+      "created_at": "2026-11-08T12:11:09.816285564Z",
+      "commit": "42b0d59178aae340384a69782b5ee1398e4ddbc9",
       "branch": "devsecops/docker-ci",
       "findings_reported": 84,
       "results_count": 5
@@ -38,10 +38,10 @@
       "artifact": "royal67-backend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-06T19:53:25.789577371Z",
+      "created_at": "2026-11-08T12:11:52.892939891Z",
       "commit": null,
       "branch": null,
-      "findings_reported": 34,
+      "findings_reported": 35,
       "results_count": 3
     },
     {
@@ -51,26 +51,26 @@
       "artifact": "royal67-frontend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-06T19:53:27.781697842Z",
+      "created_at": "2026-11-08T12:11:55.568905516Z",
       "commit": null,
       "branch": null,
-      "findings_reported": 56,
+      "findings_reported": 57,
       "results_count": 1
     }
   ],
   "raw": {
-    "observations": 175,
+    "observations": 177,
     "by_scanner": {
-      "trivy": 174,
+      "trivy": 176,
       "semgrep": 1
     },
     "by_type": {
-      "vulnerability": 172,
+      "vulnerability": 174,
       "misconfiguration": 2,
       "sast": 1
     },
     "by_severity": {
-      "MEDIUM": 63,
+      "MEDIUM": 65,
       "HIGH": 56,
       "LOW": 52,
       "CRITICAL": 3,
@@ -78,18 +78,18 @@
     }
   },
   "deduplicated": {
-    "observations": 175,
+    "observations": 177,
     "by_scanner": {
-      "trivy": 174,
+      "trivy": 176,
       "semgrep": 1
     },
     "by_type": {
-      "vulnerability": 172,
+      "vulnerability": 174,
       "misconfiguration": 2,
       "sast": 1
     },
     "by_severity": {
-      "MEDIUM": 63,
+      "MEDIUM": 65,
       "HIGH": 56,
       "LOW": 52,
       "CRITICAL": 3,
@@ -115,7 +115,7 @@
         "matched_positive": 1,
         "matched_negative": 0,
         "unreviewed_gt": 0,
-        "detections_total": 172,
+        "detections_total": 174,
         "ground_truth_complete": false
       }
     ]
