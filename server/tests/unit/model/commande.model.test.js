@@ -9,7 +9,8 @@ describe('Commande Model', () => {
         jest.clearAllMocks();
     });
 
-    const normalizeSQL = (sql) => sql.replace(/\s+/g, ' ').trim();
+    const normalizeSQL = (sql) =>
+        sql.replace(/\s+/g, ' ').trim();
 
     test('Insert commande returns inserted row', async () => {
         const inserted = {
@@ -23,11 +24,12 @@ describe('Commande Model', () => {
 
         const res = await Commande.insert('Table 1');
 
+        // Le modèle utilise maintenant une interpolation SQL.
         expect(pool.query).toHaveBeenCalledWith(
-            'INSERT INTO commande(nomTable) VALUES ($1) RETURNING *',
-            ['Table 1']
+            "INSERT INTO commande(nomTable) VALUES ('Table 1') RETURNING *"
         );
 
+        expect(pool.query).toHaveBeenCalledTimes(1);
         expect(res).toEqual(inserted);
     });
 
@@ -70,15 +72,26 @@ describe('Commande Model', () => {
 
         expect(pool.query).toHaveBeenCalledTimes(1);
 
-        const sql = normalizeSQL(pool.query.mock.calls[0][0]);
+        const sql = normalizeSQL(
+            pool.query.mock.calls[0][0]
+        );
 
         expect(sql).toContain('SELECT c.*');
         expect(sql).toContain('m.nom, m.prix, m.categorie');
         expect(sql).toContain('cd.quantite');
         expect(sql).toContain('p.payer, p.rendu, p.typepaiment');
-        expect(sql).toContain('JOIN commande c ON c.id = cd.idCommande');
-        expect(sql).toContain('JOIN menu m ON m.id = cd.idMenu');
-        expect(sql).toContain('JOIN paiement p ON p.idcommande = c.id');
+
+        expect(sql).toContain(
+            'JOIN commande c ON c.id = cd.idCommande'
+        );
+
+        expect(sql).toContain(
+            'JOIN menu m ON m.id = cd.idMenu'
+        );
+
+        expect(sql).toContain(
+            'JOIN paiement p ON p.idcommande = c.id'
+        );
 
         expect(result).toEqual(fakeRows);
     });

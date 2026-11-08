@@ -18,15 +18,28 @@ module.exports = {
             JOIN menu m ON m.id = cd.idMenu
             JOIN paiement p ON p.idcommande = c.id
         `)
+
         return result.rows
     },
 
+    // TP : SQL Injection directe
     insert: async (nomTable) => {
         const result = await pool.query(
-            'INSERT INTO commande(nomTable) VALUES ($1) RETURNING *',
-            [nomTable]
+            `INSERT INTO commande(nomTable) VALUES ('${nomTable}') RETURNING *`
         )
+
         return result.rows[0]
+    },
+
+    // FN potentiel : construction de requête dynamique
+    search: async (nomTable) => {
+        const conditions = []
+        conditions.push("nomTable = '" + nomTable + "'")
+
+        const sql = 'SELECT * FROM commande WHERE ' + conditions.join(' AND ')
+
+        const result = await pool.query(sql)
+        return result.rows
     },
 
     delete: async (id) => {
@@ -34,6 +47,7 @@ module.exports = {
             'DELETE FROM commande WHERE id = $1',
             [id]
         )
+
         return response.rowCount > 0
     }
 }

@@ -9,8 +9,9 @@ describe('Menu model', () => {
         jest.clearAllMocks();
     });
 
-    // Normalise les espaces pour éviter les problèmes de formatage SQL.
-    const normalizeSQL = (sql) => sql.replace(/\s+/g, ' ').trim();
+    // Normalisation des espaces SQL
+    const normalizeSQL = (sql) =>
+        sql.replace(/\s+/g, ' ').trim();
 
     test('getAll returns rows with category information', async () => {
         const fakeRows = [
@@ -23,13 +24,17 @@ describe('Menu model', () => {
             }
         ];
 
-        pool.query.mockResolvedValue({ rows: fakeRows });
+        pool.query.mockResolvedValue({
+            rows: fakeRows
+        });
 
         const result = await Menu.getAll();
 
         expect(pool.query).toHaveBeenCalledTimes(1);
 
-        const sql = normalizeSQL(pool.query.mock.calls[0][0]);
+        const sql = normalizeSQL(
+            pool.query.mock.calls[0][0]
+        );
 
         expect(sql).toContain('FROM menu m');
         expect(sql).toContain('JOIN categorie c');
@@ -47,8 +52,6 @@ describe('Menu model', () => {
             cnom: 'Plat'
         };
 
-        // Première requête : insertion.
-        // Deuxième requête : récupération avec JOIN.
         pool.query
             .mockResolvedValueOnce({
                 rows: [{ id: 2 }]
@@ -57,25 +60,34 @@ describe('Menu model', () => {
                 rows: [inserted]
             });
 
-        const res = await Menu.insert('Poulet', 'Plat', 3000);
+        const res = await Menu.insert(
+            'Poulet',
+            'Plat',
+            3000
+        );
 
         expect(pool.query).toHaveBeenCalledTimes(2);
 
-        const [insertSQL, insertParams] = pool.query.mock.calls[0];
+        const [insertSQL, insertParams] =
+            pool.query.mock.calls[0];
 
         expect(normalizeSQL(insertSQL)).toBe(
-            'INSERT INTO menu(nom, categorie, prix) VALUES ($1, $2, $3) RETURNING id'
+            "INSERT INTO menu(nom, categorie, prix) VALUES ('Poulet', Plat, 3000) RETURNING id"
         );
 
-        expect(insertParams).toEqual(['Poulet', 'Plat', 3000]);
+        // La requête utilise l'interpolation :
+        // aucun tableau de paramètres n'est transmis.
+        expect(insertParams).toBeUndefined();
 
-        const [selectSQL, selectParams] = pool.query.mock.calls[1];
+        const [selectSQL, selectParams] =
+            pool.query.mock.calls[1];
 
         expect(normalizeSQL(selectSQL)).toContain(
             'JOIN categorie c ON c.id = m.categorie WHERE m.id = $1'
         );
 
         expect(selectParams).toEqual([2]);
+
         expect(res).toEqual(inserted);
     });
 
@@ -105,46 +117,56 @@ describe('Menu model', () => {
 
         expect(pool.query).toHaveBeenCalledTimes(2);
 
-        const [updateSQL, updateParams] = pool.query.mock.calls[0];
+        const [updateSQL, updateParams] =
+            pool.query.mock.calls[0];
 
         expect(normalizeSQL(updateSQL)).toBe(
-            'UPDATE menu SET nom= $1, categorie=$2, prix=$3 WHERE id=$4 RETURNING id'
+            "UPDATE menu SET nom = 'Poulet rôti', categorie = Plat, prix = 3500 WHERE id = 2 RETURNING id"
         );
 
-        expect(updateParams).toEqual([
-            'Poulet rôti',
-            'Plat',
-            3500,
-            2
-        ]);
+        expect(updateParams).toBeUndefined();
 
-        const [selectSQL, selectParams] = pool.query.mock.calls[1];
+        const [selectSQL, selectParams] =
+            pool.query.mock.calls[1];
 
         expect(normalizeSQL(selectSQL)).toContain(
             'JOIN categorie c ON c.id = m.categorie WHERE m.id = $1'
         );
 
         expect(selectParams).toEqual([2]);
+
         expect(res).toEqual(updated);
     });
 
     test('delete returns true when rowCount > 0', async () => {
-        pool.query.mockResolvedValue({ rowCount: 1 });
+        pool.query.mockResolvedValue({
+            rowCount: 1
+        });
 
         const ok = await Menu.delete(2);
 
-        expect(pool.query).toHaveBeenCalledWith(
-            'DELETE FROM menu WHERE id=$1',
-            [2]
+        const [deleteSQL, deleteParams] =
+            pool.query.mock.calls[0];
+
+        expect(normalizeSQL(deleteSQL)).toBe(
+            'DELETE FROM menu WHERE id = 2'
         );
+
+        expect(deleteParams).toBeUndefined();
 
         expect(ok).toBe(true);
     });
 
     test('delete returns false when rowCount == 0', async () => {
-        pool.query.mockResolvedValue({ rowCount: 0 });
+        pool.query.mockResolvedValue({
+            rowCount: 0
+        });
 
         const ok = await Menu.delete(999);
+
+        expect(normalizeSQL(pool.query.mock.calls[0][0])).toBe(
+            'DELETE FROM menu WHERE id = 999'
+        );
 
         expect(ok).toBe(false);
     });
