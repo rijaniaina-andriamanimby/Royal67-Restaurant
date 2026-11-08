@@ -3,8 +3,8 @@ import api from "../service/api"
 import StatsCards from "../components/Statistique/StatsCards"
 import TopMenusChart from "../components/Statistique/TopMenusChart"
 import StatsFilter from "../components/Statistique/StatsFilter"
-import SalesByDayChart from "../components/Statistique/SalesByDayChart "
-import PaymentsHistory from "../components/Statistique/PaymentsHistory "
+import SalesByDayChart from "../components/Statistique/SalesByDayChart"
+import PaymentsHistory from "../components/Statistique/PaymentsHistory"
 import { BarChart3 } from "lucide-react"
 
 const Statistique = () => {
@@ -97,7 +97,7 @@ const Statistique = () => {
         */}
 
         {/* Payments History */}
-        <PaymentsHistory data={payments} />
+        <PaymentsHistory data={payments || []} />
       </div>
     </div>
   )
