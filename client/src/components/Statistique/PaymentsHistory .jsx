@@ -33,7 +33,7 @@ const PaymentsHistory = ({ data }) => (
                   p.typepaiement === "Espèce" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
                 }`}
               >
-                {p.typepaiement}
+                {p.typepaiment}
               </span>
             </td>
             <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
