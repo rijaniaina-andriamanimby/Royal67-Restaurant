@@ -29,6 +29,7 @@ const commandeRouter = require('./routes/commande.routes')
 const statsRouter = require('./routes/stats.routes')
 const categorieRouter = require('./routes/categorie.routes')
 
+// commentaire
 app.use('/menu', menuRouter)
 app.use('/commande', commandeRouter)
 app.use('/stats', statsRouter)
