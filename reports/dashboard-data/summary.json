@@ -1,11 +1,11 @@
 {
   "project": "Royal67 Restaurant",
   "run_metadata": {
-    "generated_at_utc": "2026-11-13T04:46:12+00:00",
-    "commit_sha": "466a8a25e9361cd44ea4acbd5a5edd84dac07c30",
+    "generated_at_utc": "2026-11-13T05:13:39+00:00",
+    "commit_sha": "a25ec0d7fe099be275f747e0f4c3d5e5731c8022",
     "branch": "devsecops/docker-ci",
-    "workflow_run_id": "43367409147",
-    "workflow_run_number": "26"
+    "workflow_run_id": "43370451559",
+    "workflow_run_number": "28"
   },
   "scan_metadata": [
     {
@@ -25,8 +25,8 @@
       "artifact": ".",
       "artifact_type": "repository",
       "scope": "filesystem",
-      "created_at": "2026-11-13T04:44:19.314173907Z",
-      "commit": "466a8a25e9361cd44ea4acbd5a5edd84dac07c30",
+      "created_at": "2026-11-13T05:12:26.458042762Z",
+      "commit": "a25ec0d7fe099be275f747e0f4c3d5e5731c8022",
       "branch": "devsecops/docker-ci",
       "findings_reported": 86,
       "results_count": 4
@@ -38,7 +38,7 @@
       "artifact": "royal67-backend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-13T04:45:19.724229155Z",
+      "created_at": "2026-11-13T05:12:58.38560936Z",
       "commit": null,
       "branch": null,
       "findings_reported": 30,
@@ -51,7 +51,7 @@
       "artifact": "royal67-frontend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-13T04:45:27.150639295Z",
+      "created_at": "2026-11-13T05:13:05.215751134Z",
       "commit": null,
       "branch": null,
       "findings_reported": 26,
