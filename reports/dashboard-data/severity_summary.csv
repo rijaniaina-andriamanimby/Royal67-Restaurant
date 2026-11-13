@@ -1,8 +1,9 @@
 ﻿scanner,finding_type,severity,count
+semgrep,sast,ERROR,2
 semgrep,sast,INFO,1
-trivy,misconfiguration,HIGH,1
-trivy,misconfiguration,LOW,1
-trivy,vulnerability,CRITICAL,3
-trivy,vulnerability,HIGH,55
-trivy,vulnerability,LOW,51
-trivy,vulnerability,MEDIUM,65
+trivy,misconfiguration,HIGH,4
+trivy,misconfiguration,LOW,4
+trivy,vulnerability,CRITICAL,1
+trivy,vulnerability,HIGH,54
+trivy,vulnerability,LOW,6
+trivy,vulnerability,MEDIUM,73

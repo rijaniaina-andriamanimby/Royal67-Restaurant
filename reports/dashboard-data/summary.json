@@ -1,21 +1,21 @@
 {
   "project": "Royal67 Restaurant",
   "run_metadata": {
-    "generated_at_utc": "2026-11-08T15:56:14+00:00",
-    "commit_sha": "8610968cc167655ac6ae90fe0d0e4cfaf81a7372",
+    "generated_at_utc": "2026-11-13T04:46:12+00:00",
+    "commit_sha": "466a8a25e9361cd44ea4acbd5a5edd84dac07c30",
     "branch": "devsecops/docker-ci",
-    "workflow_run_id": "42497170187",
-    "workflow_run_number": "20"
+    "workflow_run_id": "43367409147",
+    "workflow_run_number": "26"
   },
   "scan_metadata": [
     {
       "scanner": "semgrep",
       "source_file": "reports/scans/semgrep-report.json",
       "version": "1.182.1",
-      "findings_reported": 1,
+      "findings_reported": 3,
       "errors_count": 0,
       "errors": [],
-      "scanned_targets_count": 74,
+      "scanned_targets_count": 73,
       "scan_time_seconds": null
     },
     {
@@ -25,11 +25,11 @@
       "artifact": ".",
       "artifact_type": "repository",
       "scope": "filesystem",
-      "created_at": "2026-11-08T15:54:52.438184633Z",
-      "commit": "8610968cc167655ac6ae90fe0d0e4cfaf81a7372",
+      "created_at": "2026-11-13T04:44:19.314173907Z",
+      "commit": "466a8a25e9361cd44ea4acbd5a5edd84dac07c30",
       "branch": "devsecops/docker-ci",
-      "findings_reported": 84,
-      "results_count": 5
+      "findings_reported": 86,
+      "results_count": 4
     },
     {
       "scanner": "trivy",
@@ -38,10 +38,10 @@
       "artifact": "royal67-backend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-08T15:55:35.8314243Z",
+      "created_at": "2026-11-13T04:45:19.724229155Z",
       "commit": null,
       "branch": null,
-      "findings_reported": 35,
+      "findings_reported": 30,
       "results_count": 3
     },
     {
@@ -51,59 +51,95 @@
       "artifact": "royal67-frontend:ci",
       "artifact_type": "container_image",
       "scope": "image",
-      "created_at": "2026-11-08T15:55:38.28103337Z",
+      "created_at": "2026-11-13T04:45:27.150639295Z",
       "commit": null,
       "branch": null,
-      "findings_reported": 57,
-      "results_count": 1
+      "findings_reported": 26,
+      "results_count": 3
     }
   ],
   "raw": {
-    "observations": 177,
+    "observations": 145,
     "by_scanner": {
-      "trivy": 176,
-      "semgrep": 1
+      "trivy": 142,
+      "semgrep": 3
     },
     "by_type": {
-      "vulnerability": 174,
-      "misconfiguration": 2,
-      "sast": 1
+      "vulnerability": 134,
+      "misconfiguration": 8,
+      "sast": 3
     },
     "by_severity": {
-      "MEDIUM": 65,
-      "HIGH": 56,
-      "LOW": 52,
-      "CRITICAL": 3,
-      "INFO": 1
+      "MEDIUM": 73,
+      "HIGH": 58,
+      "LOW": 10,
+      "ERROR": 2,
+      "INFO": 1,
+      "CRITICAL": 1
     }
   },
   "deduplicated": {
-    "observations": 177,
+    "observations": 143,
     "by_scanner": {
-      "trivy": 176,
-      "semgrep": 1
+      "trivy": 140,
+      "semgrep": 3
     },
     "by_type": {
-      "vulnerability": 174,
-      "misconfiguration": 2,
-      "sast": 1
+      "vulnerability": 132,
+      "misconfiguration": 8,
+      "sast": 3
     },
     "by_severity": {
-      "MEDIUM": 65,
-      "HIGH": 56,
-      "LOW": 52,
-      "CRITICAL": 3,
-      "INFO": 1
+      "MEDIUM": 71,
+      "HIGH": 58,
+      "LOW": 10,
+      "ERROR": 2,
+      "INFO": 1,
+      "CRITICAL": 1
     }
   },
   "ground_truth_metrics": {
     "available": true,
     "complete": false,
-    "reason": "Résultats partiels : les détections non examinées ne sont pas classées FP et le Recall/F1 global est désactivé.",
+    "reason": "Résultats partiels : les références non vérifiées sont ignorées et le Recall/F1 global est désactivé.",
     "by_scanner": [
       {
+        "scanner": "semgrep",
+        "category": "SAST",
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision_reviewed_sample": null,
+        "recall": null,
+        "f1": null,
+        "reviewed_positive": 0,
+        "reviewed_negative": 0,
+        "matched_positive": 0,
+        "matched_negative": 0,
+        "unreviewed_gt": 14,
+        "detections_total": 3,
+        "ground_truth_complete": false
+      },
+      {
         "scanner": "trivy",
-        "finding_type": "vulnerability",
+        "category": "CONTAINER",
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision_reviewed_sample": null,
+        "recall": null,
+        "f1": null,
+        "reviewed_positive": 0,
+        "reviewed_negative": 0,
+        "matched_positive": 0,
+        "matched_negative": 0,
+        "unreviewed_gt": 4,
+        "detections_total": 140,
+        "ground_truth_complete": false
+      },
+      {
+        "scanner": "trivy",
+        "category": "SCA",
         "tp": 1,
         "fp": 0,
         "fn": 5,
@@ -114,8 +150,8 @@
         "reviewed_negative": 0,
         "matched_positive": 1,
         "matched_negative": 0,
-        "unreviewed_gt": 0,
-        "detections_total": 174,
+        "unreviewed_gt": 3,
+        "detections_total": 140,
         "ground_truth_complete": false
       }
     ]
